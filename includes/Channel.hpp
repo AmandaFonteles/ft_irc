@@ -6,7 +6,7 @@
 /*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/28 12:55:22 by aibonade          #+#    #+#             */
-/*   Updated: 2026/05/01 15:12:16 by aibonade         ###   ########.fr       */
+/*   Updated: 2026/05/01 18:04:34 by aibonade         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -65,6 +65,11 @@ public:
 	// bool						isMember(Client const &c) const;
 	bool						isOperator(Client const &c) const;
 	bool						isKey(std::string key) const;
+	bool						isInvited(Client const &c) const;//A ajouter sur le cpp
+	bool						isfull() const;//A ajouter sur le cpp
+	bool						hasKey() const;//A ajouter sur le cpp
+	bool						addInvite(Client const &newmember);//void + Exception ?//A ajouter sur le cpp
+	bool						removeInvite(Client const &member);//void + Exception ?//A ajouter sur le cpp
 };
 
 

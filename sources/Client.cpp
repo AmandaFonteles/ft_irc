@@ -6,7 +6,7 @@
 /*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/28 14:55:46 by aibonade          #+#    #+#             */
-/*   Updated: 2026/04/29 13:11:39 by aibonade         ###   ########.fr       */
+/*   Updated: 2026/05/01 18:06:30 by aibonade         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,17 +14,17 @@
 
 
 /********CONSTRUCTORS & DESTRUCTOR********/
-Client::Client():_socketFd(-1), _passOk(false), _registred(false)//pour moi on pourrait presque le virer, sinon on met le fd a cb ?
+Client::Client():_socketFd(-1), _passOk(false), _registered(false)//pour moi on pourrait presque le virer, sinon on met le fd a cb ?
 {
 	return;
 }
 
-Client::Client(Client const &cpy):_socketFd(cpy._socketFd), _nickname(cpy._nickname), _username(cpy._username), _passOk(cpy._passOk), _registred(cpy._registred), _channels(cpy._channels), _bufferIn(cpy._bufferIn), _bufferOut(cpy._bufferOut)
+Client::Client(Client const &cpy):_socketFd(cpy._socketFd), _nickname(cpy._nickname), _username(cpy._username), _passOk(cpy._passOk), _registered(cpy._registered), _channels(cpy._channels), _bufferIn(cpy._bufferIn), _bufferOut(cpy._bufferOut)
 {
 	return;
 }
 
-Client::Client(int socketFd):_socketFd(socketFd), _passOk(false), _registred(false)
+Client::Client(int socketFd):_socketFd(socketFd), _passOk(false), _registered(false)
 {
 	return;
 }
@@ -57,7 +57,7 @@ void	Client::set_passOk(bool value)
 
 void	Client::set_registred(bool value)
 {
-	_registred = value;
+	_registered = value;
 }
 
 void	Client::set_bufferIn(std::string str)
@@ -96,7 +96,7 @@ bool	Client::get_passOk() const
 
 bool	Client::get_registred() const
 {
-	return (_registred);
+	return (_registered);
 }
 
 // std::set<Channel>	Client::get_channels();//get ou print ? ou string ? //TO DO
@@ -125,7 +125,7 @@ std::string	&Client::get_bufferOut()
 // void	Client::addChannel(Channel &chan);//bool/exception ?//TO DO
 // void	Client::removeChannel(Channel const &chan);//TO DO
 
-bool	Client::isInChannel(Channel &chan)
+bool	Client::isInChannel(Channel &chan) const
 {
 	if (_channels.find(chan) != _channels.end())
 		return (true);

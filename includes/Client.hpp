@@ -6,7 +6,7 @@
 /*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/28 12:55:34 by aibonade          #+#    #+#             */
-/*   Updated: 2026/05/01 15:43:34 by aibonade         ###   ########.fr       */
+/*   Updated: 2026/05/01 18:08:53 by aibonade         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -61,8 +61,9 @@ public:
 
 //other methods
 	void				addChannel(Channel &chan);//bool/exception ?
-	void				removeChannel(Channel const &chan);
-	bool				isInChannel(Channel &chan);
+	void				removeChannel(Channel const &chan);//remove le client aussi dans le channel
+	bool				isInChannel(Channel &chan) const;
+	void				removeAllChannel();//appelle removeChannel pour chaque Channel du client
 };
 
 
