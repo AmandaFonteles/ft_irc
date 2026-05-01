@@ -6,7 +6,7 @@
 /*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/28 12:55:34 by aibonade          #+#    #+#             */
-/*   Updated: 2026/04/28 21:38:14 by aibonade         ###   ########.fr       */
+/*   Updated: 2026/05/01 15:43:34 by aibonade         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,16 +20,17 @@ class Client
 {
 private:
 //data
-	int					_socketFd;//const ?
+	int					_socketFd;
+	bool				_passOk;//passe a true si le client utilise PASS avec le mot de passe donne au lancement du serveur=>ou est stocke ce mdp ?
 	std::string			_nickname;
 	std::string			_username;//setter a proteger on ne peut le modifier qu'au debut
-	bool				_passOk;//passe a true si le client utilise PASS avec le mot de passe donne au lancement du serveur=>ou est stocke ce mdp ?
-	bool				_registred;//passe a true quand le client a passe toute la phase d'enregistrement
+	bool				_registered;//passe a true quand le client a passe toute la phase d'enregistrement
 	std::set<Channel &>	_channels;// <const> ? et surtout strings => on utiliserait la map du serveur pour retrouver le bon serveur ?  
 	std::string			_bufferIn;//besoin de plusieurs ? //public?
 	std::string			_bufferOut;//queue ? //public ?
 //methods 
 						Client();
+	Client				&operator=(Client const &to_affect);
 
 
 public:
@@ -59,7 +60,6 @@ public:
 	std::string			&get_bufferOut(); 
 
 //other methods
-	Client				&operator=(Client const &to_affect);
 	void				addChannel(Channel &chan);//bool/exception ?
 	void				removeChannel(Channel const &chan);
 	bool				isInChannel(Channel &chan);

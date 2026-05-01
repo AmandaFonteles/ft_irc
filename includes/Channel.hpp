@@ -6,7 +6,7 @@
 /*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/28 12:55:22 by aibonade          #+#    #+#             */
-/*   Updated: 2026/04/28 20:46:29 by aibonade         ###   ########.fr       */
+/*   Updated: 2026/05/01 15:12:16 by aibonade         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,6 +24,7 @@ private:
 	std::string					_topic;
 	std::set<Client &>			_members;//pas sure qu'ils soient const ici.... =>quand on les remove ici faut remove le chan chez eux aussi 
 	std::set<Client const &>	_operators;
+	std::set<Client const &>	_invited;
 	std::string					_key;//"" => no key
 	unsigned int				_limit;//nb user max => 0 = no limit ?
 	bool						_inviteOnly;

@@ -6,7 +6,7 @@
 /*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/28 14:55:46 by aibonade          #+#    #+#             */
-/*   Updated: 2026/04/28 21:38:37 by aibonade         ###   ########.fr       */
+/*   Updated: 2026/04/29 13:11:39 by aibonade         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,11 +15,6 @@
 
 /********CONSTRUCTORS & DESTRUCTOR********/
 Client::Client():_socketFd(-1), _passOk(false), _registred(false)//pour moi on pourrait presque le virer, sinon on met le fd a cb ?
-{
-	return;
-}
-
-Client::~Client()
 {
 	return;
 }
@@ -34,6 +29,10 @@ Client::Client(int socketFd):_socketFd(socketFd), _passOk(false), _registred(fal
 	return;
 }
 
+Client::~Client()
+{
+	return;
+}
 
 /********SETTERS********/
 void	Client::set_nickname(std::string nickname)//TO DO
@@ -114,14 +113,14 @@ std::string	&Client::get_bufferOut()
 }
 
 /********OTHER METHODS********/
-Client	&Client::operator=(Client const &to_affect)//est-ce qu'on copie les buffers, passOK et channels et fd ? //TO DO
-{
-	if (this != &to_affect)
-	{
-		//en fait pour moi ca n'a pas vraiment de sens de faire un client =, si ? Ya peut-etre un truc que j'ai mal compris...
-	}
-	return (*this);
-}
+// Client	&Client::operator=(Client const &to_affect)//est-ce qu'on copie les buffers, passOK et channels et fd ? //TO DO
+// {
+// 	if (this != &to_affect)
+// 	{
+// 		//en fait pour moi ca n'a pas vraiment de sens de faire un client =, si ? Ya peut-etre un truc que j'ai mal compris...
+// 	}
+// 	return (*this);
+// }
 
 // void	Client::addChannel(Channel &chan);//bool/exception ?//TO DO
 // void	Client::removeChannel(Channel const &chan);//TO DO

@@ -6,7 +6,7 @@
 /*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/28 14:54:05 by aibonade          #+#    #+#             */
-/*   Updated: 2026/04/28 21:28:58 by aibonade         ###   ########.fr       */
+/*   Updated: 2026/04/29 12:52:34 by aibonade         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -101,7 +101,7 @@ bool	Channel::get_topicProtected() const
 }
 
 /********OTHER METHODS********/
-Channel	&Channel::operator=(Channel const &to_affect)
+Channel	&Channel::operator=(Channel const &to_affect)//copier la data depuis la source vers cet objet sauf les membres const
 {
 	if (this != &to_affect)
 	{
