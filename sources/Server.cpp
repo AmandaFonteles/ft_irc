@@ -6,15 +6,15 @@
 /*   By: afontele <afontele@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 21:54:23 by afontele          #+#    #+#             */
-/*   Updated: 2026/04/30 17:54:28 by afontele         ###   ########.fr       */
+/*   Updated: 2026/05/01 18:26:43 by afontele         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/Server.hpp"
 
-//
+// ? Check if the port is between 1024 and 65535 - range of available ports
 Server::Server(const std::string &port, const std::string &password)
-	: _port(atoi(port.c_str())), _password(password), _serverSocket(-1) {}
+	: _port(static_cast<short>(atoi(port.c_str()))), _password(password), _serverSocket(-1) {}
 
 Server::Server(Server const &other) {}
 
@@ -32,8 +32,8 @@ void	Server::ServerInit() {
 	// - AF_INET = set IPv4;
 	// - SOCK_STREAM = Provides  sequenced,  reliable,  two-way,  connection-based byte streams.
 	// - IPPROTO_TCP = set TCP as the transport protocol.
-	// ? I don't know if using SOCK_NONBLOCK will resolve the non block problem completelly (only for Linux 2.6+) - chercher non bloquant sur discord
-	_serverSocket = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, IPPROTO_TCP); //If error errno is set
+	// ! Tried using the OR and SOCK_NONBLOCK, but it's not C++98 compliant (apparently)
+	_serverSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP); //If error errno is set
 	if (_serverSocket < 0) { //handle error (cerr, exception...)
 		std::cerr << "Error: Fail to create socket." << std::endl;
 		return ;
@@ -50,7 +50,13 @@ void	Server::ServerInit() {
 	}
 	
     // 3. Make the socket non-blocking with fcntl() //chercher non bloquant sur discord
-	//Won't use since we already have SOCK_NONBLCK ?
+	//wHEN THE PROJECT SAYS WE CAN'T USE FCNTL IS JUST FOR SEND AND RECEIAVING MSG? OR HERE AS WELL
+	if (fcntl(_serverSocket, F_SETFL, O_NONBLOCK) < 0) {
+		close(_serverSocket);
+		std::cerr << "Error: fcntl failed." << std::endl;
+		return ;
+	}
+	
     // 4. Bind the socket to _port with bind()
 	// - Struct specific for IP (will be casted to a generic struct sockaddr to fit bind())
 	struct sockaddr_in	serverAddr;
@@ -77,6 +83,14 @@ void	Server::ServerInit() {
 	}
 	
     // 6. Add _serverSocket to _pollFds with POLLIN event
+	// - Struct pollfd is defined in poll.h
+	// - POLLIN alerts when data is ready to recv() on the socket.
+	struct pollfd	serverpfd;
+	serverpfd.fd = _serverSocket;
+	serverpfd.events = POLLIN;
+	serverpfd.revents = 0;
+	_pollFds.push_back(serverpfd);
+
 	std::cout << "[DEBUG]ServerInit - port: " << _port << std::endl;
 }
 
@@ -84,6 +98,7 @@ void	Server::ServerInit() {
 void	Server::ServerRun() {
 	while (true) {
 		// 1. Call poll() on the _pollFds vector
+		// - poll() is used to "put the CPU to sleep" til there's data to read;
         // 2. Loop through _pollFds to find which fd triggered an event
         // 3. If it's the _serverSocket -> call acceptNewClient()
         // 4. If it's a client fd -> call handleClientData(fd)
