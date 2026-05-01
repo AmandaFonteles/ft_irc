@@ -6,7 +6,7 @@
 /*   By: afontele <afontele@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 21:54:23 by afontele          #+#    #+#             */
-/*   Updated: 2026/05/01 18:26:43 by afontele         ###   ########.fr       */
+/*   Updated: 2026/05/01 19:50:13 by afontele         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,7 +26,7 @@ Server::~Server() {
 }
 
 //Network Setup
-//OBS: The std::cerr msgs aren't definitive, I might change to throw runtime error
+// ! The std::cerr msgs aren't definitive, I might change to throw runtime error
 void	Server::ServerInit() {
 	// 1. Create the socket with socket() - Comes with "default settings"
 	// - AF_INET = set IPv4;
@@ -95,12 +95,37 @@ void	Server::ServerInit() {
 }
 
 //Event loop
+// ! Check how to handle errors after
 void	Server::ServerRun() {
 	while (true) {
 		// 1. Call poll() on the _pollFds vector
-		// - poll() is used to "put the CPU to sleep" til there's data to read;
+		// - this infinite loop + poll() is used to "put the CPU to sleep" til there's data to read;
+		// - A vector of pollfds struct is passed to poll(), since a vector stores all its elements in one continuous block of memory, exactly like a C-array
+		// - Change -1 to POLL_TIMEOUT!!!
+		int eventTrack = poll(&_pollFds[0], _pollFds.size(), -1);
+		if (eventTrack < 0) {
+			if (errno == EINTR) {
+				std::cout << "[DEBUG]Interrupted by signal, shouldn't crash the server" << std::endl;
+				continue ;
+			}
+			std::cerr << "Error: Poll" << std::endl;
+			break ;
+		}
+		
         // 2. Loop through _pollFds to find which fd triggered an event
-        // 3. If it's the _serverSocket -> call acceptNewClient()
-        // 4. If it's a client fd -> call handleClientData(fd)
+		// - Since poll() returns how many fds flagged and not which ones, this loop is needed
+		for (size_t i = 0; i < _pollFds.size(); i++) {
+			// - If _pollFds[i].revents = 0, nothing happened on this socket.
+			// - revents is a bitmap(each bit works as a checkbox), we use bitwise AND to check that the POLLIN box is checked
+			// - The bitwise operation is necessary because the same revents can store POLLIN and other flags, and we want to treat every socket that has POLLIN in it.
+			if (_pollFds[i].revents & POLLIN) {
+				// 3. If it's the _serverSocket -> call acceptNewClient()
+				if (_pollFds[i].fd == _serverSocket)
+					//acceptNewClient();
+				// 4. If it's a client fd -> call handleClientData(fd)
+				else
+					//receiveClientData();
+			}
+		}        
 	}
 }
