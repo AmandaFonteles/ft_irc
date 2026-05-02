@@ -6,7 +6,7 @@
 /*   By: afontele <afontele@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 21:54:11 by afontele          #+#    #+#             */
-/*   Updated: 2026/05/01 18:08:51 by afontele         ###   ########.fr       */
+/*   Updated: 2026/05/02 13:31:12 by afontele         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,6 +24,7 @@
 #include <fcntl.h>
 #include <netinet/in.h> //for struct sockaddr_in, IPPROTO_TCP
 #include <cstring> //for memset
+#include <stdexcept> // necessary for handling error inside the Constructor
 //we'll need signal and errno
 
 class	Server {
@@ -41,8 +42,10 @@ public:
 	Server	&operator=(Server const &other);
 	~Server();
 
-	void	ServerInit();
+	int		ServerInit();
 	void	ServerRun();
+	void	acceptNewClient();
+	void	receiveClientData(int clientFd);
 };
 
 #endif
