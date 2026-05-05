@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
+/*   By: afontele <afontele@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/28 12:55:34 by aibonade          #+#    #+#             */
-/*   Updated: 2026/05/05 10:46:55 by aibonade         ###   ########.fr       */
+/*   Updated: 2026/05/05 18:22:02 by afontele         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,8 @@
 # define CLIENT_HPP
 # include <string>
 # include <set>
-# include "Channel.hpp"
+
+class Channel;
 
 class Client
 {
@@ -45,7 +46,7 @@ public:
 	void				set_nickname(std::string nickname);
 	void				set_username(std::string username);
 	void				set_passOk(bool value);
-	void				set_registred(bool value);
+	void				set_registered(bool value);
 	void				set_bufferOut(std::string str);//+str ..ajouter un separateur ? Ou il existe deja ?
 
 //getters
@@ -54,7 +55,7 @@ public:
 	std::string			get_nickname() const;
 	std::string			get_username() const;
 	bool				get_passOk() const;
-	bool				get_registred() const;
+	bool				get_registered() const;
 	std::set<Channel>	get_channels();//get ou print ? ou string ?
 	// Channel				get_channel(int i);//ou nom du chanel ?
 	std::string			&get_bufferOut(); 

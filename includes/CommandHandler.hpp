@@ -3,17 +3,17 @@
 /*                                                        :::      ::::::::   */
 /*   CommandHandler.hpp                                 :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dnayel <dnayel@student.42.fr>              +#+  +:+       +#+        */
+/*   By: afontele <afontele@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/05 15:55:06 by dnayel            #+#    #+#             */
-/*   Updated: 2026/05/05 17:09:36 by dnayel           ###   ########.fr       */
+/*   Updated: 2026/05/05 18:03:46 by afontele         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef COMMANDHANDLER_HPP
-#define COMMANDHANDLER_HPP
+# define COMMANDHANDLER_HPP
 
-#include "../includes/Message.hpp"
+# include "../includes/Message.hpp"
 
 
 class Server;
@@ -33,6 +33,6 @@ class CommandHandler
 		void handleUSER(Server &server, Client &client, const Message &msg);
 
 		void registerClient(Server &server, Client &client);
-}
+};
 
 #endif

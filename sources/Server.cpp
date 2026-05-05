@@ -6,7 +6,7 @@
 /*   By: afontele <afontele@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 21:54:23 by afontele          #+#    #+#             */
-/*   Updated: 2026/05/05 17:30:25 by afontele         ###   ########.fr       */
+/*   Updated: 2026/05/05 18:11:55 by afontele         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,23 +14,23 @@
 
 // !!! FOR ERROR: use errno on cerr messages?
 Server::Server(const std::string &port, const std::string &password) : _password(password), _serverSocket(-1) {
-		std::stringstream	extractInt(port);
-		int					portNb = 0;
+	std::stringstream	extractInt(port);
+	int					portNb = 0;
 
-		// - Extract the stirng from the stream into the int
-		extractInt >> portNb;
-		
-		// 1. Check for int extraction errors or leftover chars
-		if (extractInt.fail() || !extractInt.eof())
-			throw std::invalid_argument("Invalid port format");
+	// - Extract the stirng from the stream into the int
+	extractInt >> portNb;
+	
+	// 1. Check for int extraction errors or leftover chars
+	if (extractInt.fail() || !extractInt.eof())
+		throw std::invalid_argument("Invalid port format");
 
-		// 2. Check available port range
-		if (portNb < 1024 || portNb > 65535)
-			throw std::invalid_argument("Invalid port number.");
+	// 2. Check available port range
+	if (portNb < 1024 || portNb > 65535)
+		throw std::invalid_argument("Invalid port number.");
 
-		// 3. Unsigned short cast
-		_port = static_cast<unsigned short>(portNb);
-	}
+	// 3. Unsigned short cast
+	_port = static_cast<unsigned short>(portNb);
+}
 
 // Server::Server(Server const &other) {}
 

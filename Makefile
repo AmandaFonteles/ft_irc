@@ -18,7 +18,11 @@ OBJS_DIR	:= objects
 
 ### FILES ###
 SRCS		:= $(addprefix $(SRCS_DIR)/, \
-				parser.cpp \
+				Channel.cpp \
+				Client.cpp \
+				CommandHandler.cpp \
+				Message.cpp \
+				Parser.cpp \
 				Server.cpp \
 				main.cpp \
 				)

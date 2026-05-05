@@ -6,14 +6,13 @@
 /*   By: afontele <afontele@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/30 15:09:52 by afontele          #+#    #+#             */
-/*   Updated: 2026/05/05 15:25:20 by afontele         ###   ########.fr       */
+/*   Updated: 2026/05/05 18:07:26 by afontele         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <iostream>
 #include "Server.hpp"
 
-//Amanda: Je passe av[1] et av[2] directement a mon constructor
 int	main(int ac, char **av) {
 	if (ac != 3) {
 		std::cerr << "Usage: ./ircserv <port> <password>" << std::endl;

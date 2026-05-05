@@ -6,29 +6,30 @@
 /*   By: afontele <afontele@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 21:54:11 by afontele          #+#    #+#             */
-/*   Updated: 2026/05/05 14:57:18 by afontele         ###   ########.fr       */
+/*   Updated: 2026/05/05 18:19:34 by afontele         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef SERVER_HPP
-#define SERVER_HPP
+# define SERVER_HPP
 
-#include <iostream>
-#include <string>
-#include <sstream> // necessary for stringstream
-#include <vector> //necessary for poll() - we pass a struct pollfd as poll argument
-#include <map>
-#include <poll.h>
-#include <sys/socket.h> //for AF_INET and bind
-#include <sys/types.h>
-#include <cerrno>
-#include <unistd.h> //for close
-#include <fcntl.h>
-#include <netinet/in.h> //for struct sockaddr_in, IPPROTO_TCP
-#include <cstring> //for memset
-#include <stdexcept> // necessary for handling error inside the Constructor
-// #include "Channel.hpp"
-// #include "Client.hpp"
+# include <iostream>
+# include <string>
+# include <sstream> // necessary for stringstream
+# include <vector> //necessary for poll() - we pass a struct pollfd as poll argument
+# include <map>
+# include <poll.h>
+# include <sys/socket.h> //for AF_INET and bind
+# include <sys/types.h>
+# include <cerrno>
+# include <unistd.h> //for close
+# include <fcntl.h>
+# include <netinet/in.h> //for struct sockaddr_in, IPPROTO_TCP
+# include <cstring> //for memset
+# include <stdexcept> // necessary for handling error inside the Constructor
+# include "Channel.hpp"
+# include "Client.hpp"
+# include "CommandHandler.hpp"
 
 //we'll need signal and errno
 
@@ -60,9 +61,9 @@ public:
 	void	cleanClosure(int clientFd);
 
 	//Channel methods
-	// Channel  *getChannel(std::string name);
-	// Channel  *createChannel(std::string name);
-	// void     deleteChannel(Channel *chan);
+	Channel  *getChannel(std::string name);
+	Channel  *createChannel(std::string name);
+	void     deleteChannel(Channel *chan);
 };
 
 #endif

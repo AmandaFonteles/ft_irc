@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   CommandHandler.cpp                                 :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dnayel <dnayel@student.42.fr>              +#+  +:+       +#+        */
+/*   By: afontele <afontele@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/05 15:55:21 by dnayel            #+#    #+#             */
-/*   Updated: 2026/05/05 16:57:42 by dnayel           ###   ########.fr       */
+/*   Updated: 2026/05/05 18:01:48 by afontele         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,15 +23,15 @@ void CommandHandler::handleCommand(Server &server, Client &client, const Message
 	if (msg.command.empty())
 		return; // Message ou comportement particulier à définir ??
 // Authorized COMMANDS even without registration
-	if (cmd == "PASS")
+	if (msg.command == "PASS")
 		handlePASS(server, client, msg);
-	else if (cmd == "NICK")
+	else if (msg.command == "NICK")
 		handleNICK(server, client, msg);
-	else if (cmd == "USER")
+	else if (msg.command == "USER")
 		handleUSER(server, client, msg);
 
 // Unauthorized COMMANDS without registration
-	if (!client.isRegistered) // CHECK comment la variable est appelée dans Client.hpp
+	if (!client.get_registered()) // CHECK comment la variable est appelée dans Client.hpp
 	{
 		// Send error message to client (e.g. "451 :You have not registered")
 		return;

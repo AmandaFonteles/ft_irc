@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
+/*   By: afontele <afontele@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/28 14:55:46 by aibonade          #+#    #+#             */
-/*   Updated: 2026/05/03 17:29:16 by aibonade         ###   ########.fr       */
+/*   Updated: 2026/05/05 18:00:35 by afontele         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,7 +55,7 @@ void	Client::set_passOk(bool value)
 	return;
 }
 
-void	Client::set_registred(bool value)
+void	Client::set_registered(bool value)
 {
 	_registered = value;
 }
@@ -94,7 +94,7 @@ bool	Client::get_passOk() const
 	return (_passOk);
 }
 
-bool	Client::get_registred() const
+bool	Client::get_registered() const
 {
 	return (_registered);
 }
