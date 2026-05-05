@@ -6,7 +6,7 @@
 /*   By: afontele <afontele@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 21:54:23 by afontele          #+#    #+#             */
-/*   Updated: 2026/05/05 15:40:56 by afontele         ###   ########.fr       */
+/*   Updated: 2026/05/05 17:28:57 by afontele         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,6 +34,7 @@ Server::Server(const std::string &port, const std::string &password) : _password
 
 // Server::Server(Server const &other) {}
 
+//coucou
 // Server	&Server::operator=(Server const &other) {}
 
 Server::~Server() {
