@@ -6,7 +6,7 @@
 /*   By: afontele <afontele@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 21:54:11 by afontele          #+#    #+#             */
-/*   Updated: 2026/05/02 13:31:12 by afontele         ###   ########.fr       */
+/*   Updated: 2026/05/05 14:57:18 by afontele         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,9 @@
 
 #include <iostream>
 #include <string>
+#include <sstream> // necessary for stringstream
 #include <vector> //necessary for poll() - we pass a struct pollfd as poll argument
+#include <map>
 #include <poll.h>
 #include <sys/socket.h> //for AF_INET and bind
 #include <sys/types.h>
@@ -25,6 +27,9 @@
 #include <netinet/in.h> //for struct sockaddr_in, IPPROTO_TCP
 #include <cstring> //for memset
 #include <stdexcept> // necessary for handling error inside the Constructor
+// #include "Channel.hpp"
+// #include "Client.hpp"
+
 //we'll need signal and errno
 
 class	Server {
@@ -35,17 +40,29 @@ private:
 	int					_serverSocket; //fd
 	std::vector<struct pollfd>	_pollFds; //vector of pollfd structs necessary for poll()
 	//map clients;map chanells
+	// std::map<std::string, Channel *> _channels; //map of pointers
+	// std::map<int, Client *>	_clients;
+	
 	Server();
 public:	
 	Server(const std::string &port, const std::string &password);
-	Server(Server const &other);
-	Server	&operator=(Server const &other);
+	// Server(Server const &other);
+	// Server	&operator=(Server const &other);
 	~Server();
 
-	int		ServerInit();
+	//Server methods
+	bool	ServerInit();
 	void	ServerRun();
+
+	//Client methods
 	void	acceptNewClient();
 	void	receiveClientData(int clientFd);
+	void	cleanClosure(int clientFd);
+
+	//Channel methods
+	// Channel  *getChannel(std::string name);
+	// Channel  *createChannel(std::string name);
+	// void     deleteChannel(Channel *chan);
 };
 
 #endif

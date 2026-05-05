@@ -6,22 +6,35 @@
 /*   By: afontele <afontele@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 21:54:23 by afontele          #+#    #+#             */
-/*   Updated: 2026/05/02 15:56:49 by afontele         ###   ########.fr       */
+/*   Updated: 2026/05/05 15:40:56 by afontele         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/Server.hpp"
 
-// ? Check if the port is between 1024 and 65535 - range of available ports
-Server::Server(const std::string &port, const std::string &password)
-	: _port(static_cast<unsigned short>(atoi(port.c_str()))), _password(password), _serverSocket(-1) {
-		if (_port < 1024 || _port > 65535)
+// !!! FOR ERROR: use errno on cerr messages?
+Server::Server(const std::string &port, const std::string &password) : _password(password), _serverSocket(-1) {
+		std::stringstream	extractInt(port);
+		int					portNb = 0;
+
+		// - Extract the stirng from the stream into the int
+		extractInt >> portNb;
+		
+		// 1. Check for int extraction errors or leftover chars
+		if (extractInt.fail() || !extractInt.eof())
+			throw std::invalid_argument("Invalid port format");
+
+		// 2. Check available port range
+		if (portNb < 1024 || portNb > 65535)
 			throw std::invalid_argument("Invalid port number.");
+
+		// 3. Unsigned short cast
+		_port = static_cast<unsigned short>(portNb);
 	}
 
-Server::Server(Server const &other) {}
+// Server::Server(Server const &other) {}
 
-Server	&Server::operator=(Server const &other) {}
+// Server	&Server::operator=(Server const &other) {}
 
 Server::~Server() {
 	close(_serverSocket);
@@ -29,7 +42,7 @@ Server::~Server() {
 }
 
 //Network Setup
-int	Server::ServerInit() {
+bool	Server::ServerInit() {
 	// 1. Create the socket with socket() - Comes with "default settings"
 	// - AF_INET = set IPv4;
 	// - SOCK_STREAM = Provides  sequenced,  reliable,  two-way,  connection-based byte streams.
@@ -38,7 +51,7 @@ int	Server::ServerInit() {
 	_serverSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP); //If error errno is set
 	if (_serverSocket < 0) { //handle error (cerr, exception...)
 		std::cerr << "Error: Fail to create socket." << std::endl;
-		return (1);
+		return (false);
 	}
 		
     // 2. Change sock "settings" allowing port reuse with setsockopt() - preventing the "Address already in use" error.
@@ -48,7 +61,7 @@ int	Server::ServerInit() {
 	if (setsockopt(_serverSocket, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable)) < 0) { //it set's errno if error
 		close(_serverSocket);
 		std::cerr << "Error: Failed to set socket to allow port reuse." << std::endl;
-		return (1);
+		return (false);
 	}
 	
     // 3. Make the socket non-blocking with fcntl() //chercher non bloquant sur discord
@@ -57,7 +70,7 @@ int	Server::ServerInit() {
 	if (fcntl(_serverSocket, F_SETFL, O_NONBLOCK) < 0) {
 		close(_serverSocket);
 		std::cerr << "Error: fcntl failed." << std::endl;
-		return (1);
+		return (false);
 	}
 	
     // 4. Bind the socket to _port with bind()
@@ -75,14 +88,14 @@ int	Server::ServerInit() {
 	if (bind(_serverSocket, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) < 0) {
 		close(_serverSocket);
 		std::cerr << "Error: Failed to bind socket." << std::endl;
-		return (1);
+		return (false);
 	}
 	
     // 5. Start listening with listen()
 	if (listen(_serverSocket, SOMAXCONN) < 0) {
 		close(_serverSocket);
 		std::cerr << "Error: Failed to listen for connections" << std::endl;
-		return (1);
+		return (false);
 	}
 	
     // 6. Add _serverSocket to _pollFds with POLLIN event
@@ -95,7 +108,7 @@ int	Server::ServerInit() {
 	_pollFds.push_back(serverpfd);
 
 	std::cout << "[DEBUG]ServerInit - port: " << _port << std::endl;
-	return (0);
+	return (true);
 }
 
 //Event loop
@@ -156,8 +169,15 @@ void	Server::acceptNewClient() {
 	}
 	
 	// 3. Add the new client to our poll() vector
-	// ? Add the new client to client map here
+	// - Add the new client to client map also
 	struct pollfd	clientpfd;
+	// Client *newClient = new Client(clientSocket);
+	// if (!newClient) {
+	// 	std::cerr << "Error: New failed." << std::endl;
+	// 	return ;
+	// }
+	
+	// _clients[clientSocket] = newClient;
 	clientpfd.fd = clientSocket;
 	clientpfd.events = POLLIN;
 	clientpfd.revents = 0;
@@ -167,7 +187,6 @@ void	Server::acceptNewClient() {
 }
 
 //Receive data from clients
-// Figure out how to pass buffer to Nayel
 void	Server::receiveClientData(int clientFd) {
 	// - Create a buffer to save temporarely the data sent from client
 	char	buff[1024];
@@ -176,20 +195,45 @@ void	Server::receiveClientData(int clientFd) {
 	std::memset(buff, 0, sizeof(buff));
 
 	// 1. Read data from the client
-	ssize_t	bytesRead = recv(clientFd, &buff, sizeof(buff) - 1, 0);
+	ssize_t	bytesRead = recv(clientFd, buff, sizeof(buff) - 1, 0);
 
 	// - Error checking
 	if (bytesRead < 0) {
 		std::cerr << "Error: Server failed on receiving message from client FD: "<< clientFd << std::endl;
+		//cleanClosure()?
+		return ;
 	}
 	
 	// 2. Clean clousure
 	else if (bytesRead == 0) {
 		//remove client from vector AND map
+		cleanClosure(clientFd);
+		return ;
 	}
 
 	else {
 		std::string	msg = buff;
 		std::cout << "[DEBUG] Message received: " << msg << std::endl;
+		//handleBuff();
+	}
+}
+
+//Disconnect a client
+void	Server::cleanClosure(int clientFd) {
+	std::cout << "Client FD " << clientFd << " disconnected." << std::endl;
+	// 1. Remove client from channels
+	
+	// 2. Close the socket
+	close(clientFd);
+	
+	// 2. Delete from map
+	// delete _clients[clientFd];
+	
+	//3. Remove from _pollFds
+	for (size_t i = 0; i < _pollFds.size(); i++) {
+		if (_pollFds[i].fd == clientFd) {
+			_pollFds.erase(_pollFds.begin() + i); //use vector method and pass the iterator of the position
+			break ;
+		}
 	}
 }

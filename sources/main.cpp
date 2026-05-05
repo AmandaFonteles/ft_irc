@@ -6,7 +6,7 @@
 /*   By: afontele <afontele@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/30 15:09:52 by afontele          #+#    #+#             */
-/*   Updated: 2026/05/02 13:34:13 by afontele         ###   ########.fr       */
+/*   Updated: 2026/05/05 15:25:20 by afontele         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,11 +26,12 @@ int	main(int ac, char **av) {
 		Server	ircServer(av[1], av[2]);
 
 		if (!ircServer.ServerInit()) {
-		//write another error msg here?
+			std::cerr << "[DEBUG] Server init failed." << std::endl;
 			return (1);
 		}
 
 		//run Server
+		ircServer.ServerRun();
 	}
 	catch(const std::exception& e)
 	{

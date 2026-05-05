@@ -1,5 +1,5 @@
 ### PROGRAM NAME ###
-NAME		:= IRC
+NAME		:= ircserv
 
 ### UTILS ###
 CC			:= c++
@@ -19,6 +19,8 @@ OBJS_DIR	:= objects
 ### FILES ###
 SRCS		:= $(addprefix $(SRCS_DIR)/, \
 				parser.cpp \
+				Server.cpp \
+				main.cpp \
 				)
 INCLUDES	:= $(INCLDS_DIR)
 INCLDS_FLAGS	:= $(addprefix -I , $(INCLUDES))
