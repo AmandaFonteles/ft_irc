@@ -6,7 +6,7 @@
 /*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/28 12:55:22 by aibonade          #+#    #+#             */
-/*   Updated: 2026/05/01 18:04:34 by aibonade         ###   ########.fr       */
+/*   Updated: 2026/05/05 09:58:37 by aibonade         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,7 +21,7 @@ class Channel
 private:
 //data
 	std::string					_name;
-	std::string					_topic;
+	std::string					_topic;//"" => no topic
 	std::set<Client &>			_members;//pas sure qu'ils soient const ici.... =>quand on les remove ici faut remove le chan chez eux aussi 
 	std::set<Client const &>	_operators;
 	std::set<Client const &>	_invited;

@@ -6,7 +6,7 @@
 /*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/28 14:55:46 by aibonade          #+#    #+#             */
-/*   Updated: 2026/05/01 18:06:30 by aibonade         ###   ########.fr       */
+/*   Updated: 2026/05/03 17:29:16 by aibonade         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,7 +62,7 @@ void	Client::set_registred(bool value)
 
 void	Client::set_bufferIn(std::string str)
 {
-	_bufferIn = _bufferIn + str;//separateur a ajouter ? ou il est debase dans la str ? ou yen n'a pas ?
+	_bufferIn = _bufferIn + str;
 	return;
 }
 
@@ -122,10 +122,29 @@ std::string	&Client::get_bufferOut()
 // 	return (*this);
 // }
 
-// void	Client::addChannel(Channel &chan);//bool/exception ?//TO DO
-// void	Client::removeChannel(Channel const &chan);//TO DO
 
-bool	Client::isInChannel(Channel &chan) const
+bool	Client::addChannel(Channel *chan)//bool/exception ?//TO DO //chan existe bien => map de server ? mais ce sera avant d'appeler cette fonction qu'on le saura ça
+{
+	//chan != NULL
+	//Essayer d'ajouter le client dans le chan avec addClient (=> dedans on le vire aussi de Invite si il est invite et on le met dans les operators s'il est le premier a rejoindre le chan)
+		//si true on met le chan dans le client
+		//si false on abort le truc
+}
+void	Client::removeChannel(Channel *chan)//remove le client aussi dans le channel//TO DO
+{
+	//chan !NULL
+	//Verifier que le client est bien dans le chan (ici)
+	//Essayer de remove le client dans chan avec removeMember (=> dedans on le vire aussi dans operators et surtout on check si le client est bien membre du chan labas et si plus de membres on suppr le chan)
+		//si true on vire le chan dans le client
+		//si false on abort le truc
+}
+
+void	Client::removeAllChannel()//appelle removeChannel pour chaque Channel du client//TO DO
+{
+	//appeler removeChannel un par un
+}
+
+bool	Client::isInChannel(Channel *chan) const
 {
 	if (_channels.find(chan) != _channels.end())
 		return (true);

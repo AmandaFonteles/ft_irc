@@ -6,7 +6,7 @@
 /*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/28 14:54:05 by aibonade          #+#    #+#             */
-/*   Updated: 2026/04/29 12:52:34 by aibonade         ###   ########.fr       */
+/*   Updated: 2026/05/03 17:51:54 by aibonade         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,19 +18,16 @@ Channel::Channel():_name("default"), _topic("default"), _key(""), _limit(0), _in
 	return;
 }
 
-Channel::~Channel()
+Channel::Channel(std::string name):_name(name), _topic("no topic set"), _key(""), _limit(0), _inviteOnly(false), _topicProtected(false)
 {
 	return;
 }
 
-Channel::Channel(Channel const &cpy):_name(cpy._name), _topic(cpy._topic), _key(cpy._key), _limit(cpy._limit), _inviteOnly(cpy._inviteOnly), _topicProtected(cpy._inviteOnly), _members(cpy._members), _operators(cpy._operators)//on copie aussi les membres et operateurs ?
-{
-	return;//voir question en comm
-}
+Channel::~Channel()	{ return; }
 
-Channel::Channel(std::string name):_name(name), _topic("no topic set"), _key(""), _limit(0), _inviteOnly(false), _topicProtected(false)
+Channel::Channel(Channel const &cpy):_name(cpy._name), _topic(cpy._topic), _key(cpy._key), _limit(cpy._limit), _inviteOnly(cpy._inviteOnly), _topicProtected(cpy._inviteOnly), _members(cpy._members), _operators(cpy._operators)
 {
-	return;//a eventuellement mettre a jour avec la commande de creation d'un channel ?
+	return;
 }
 
 /********SETTERS********/
@@ -51,7 +48,7 @@ void	Channel::set_key(std::string key, Client const &c)
 
 void	Channel::set_limit(unsigned int limit, Client const &c)
 {
-	//voir ce qu'il se passe si on a deja des participants quand on modifie cette var, comment ça se passe
+	//Si déjà des participants la limit est set donc on ne peut pas JOIN par dessus mais ça ne change rien pour les gens qui sont déjà là
 	if (isOperator(c))//checker si c'est vraiment protege + s'il faut une surcharge pour le cas ou on n'a pas d'appel client
 		_limit = limit;
 	return;
@@ -110,14 +107,14 @@ Channel	&Channel::operator=(Channel const &to_affect)//copier la data depuis la 
 		// _members = to_affect._members;//On copie ? idem pour operators ?
 		//idem on copie la clé ou on garde la meme ? ce serait plus logique de garder celle qu'on a deja mais a voir si on a vraiment besoin de cet operateur et dans quel contexte
 		if (to_affect._limit >= _members.size())
-			_limit = to_affect._limit;//Et sinon ? on la met au nb de participants ?
+			_limit = to_affect._limit;
 		_inviteOnly = to_affect._inviteOnly;
 		_topic = to_affect._topic;
 	}
 	return (*this);
 }
 
-// bool	Channel::addMember(Client const &newMember);//void + Exception ? //TO DO
+// bool	Channel::addMember(Client const &newMember);//void + Exception ? //TO DO //On considere que la clef a ete checkee dans le JOIN ! Idem pour le invite
 // bool	Channel::removeMember(Client const &member);//void + Exception ? //TO DO
 // bool	Channel::addOperator(Client const &newOperator);//void + Exception ? //TO DO
 // bool	Channel::removeOperator(Client const &op);//void + Exception ? //TO DO

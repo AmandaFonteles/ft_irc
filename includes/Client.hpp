@@ -6,7 +6,7 @@
 /*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/28 12:55:34 by aibonade          #+#    #+#             */
-/*   Updated: 2026/05/01 18:08:53 by aibonade         ###   ########.fr       */
+/*   Updated: 2026/05/05 10:46:55 by aibonade         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,7 +25,7 @@ private:
 	std::string			_nickname;
 	std::string			_username;//setter a proteger on ne peut le modifier qu'au debut
 	bool				_registered;//passe a true quand le client a passe toute la phase d'enregistrement
-	std::set<Channel &>	_channels;// <const> ? et surtout strings => on utiliserait la map du serveur pour retrouver le bon serveur ?  
+	std::set<Channel *>	_channels;// <const> ? et surtout strings => on utiliserait la map du serveur pour retrouver le bon serveur ? 
 	std::string			_bufferIn;//besoin de plusieurs ? //public?
 	std::string			_bufferOut;//queue ? //public ?
 //methods 
@@ -60,11 +60,10 @@ public:
 	std::string			&get_bufferOut(); 
 
 //other methods
-	void				addChannel(Channel &chan);//bool/exception ?
-	void				removeChannel(Channel const &chan);//remove le client aussi dans le channel
-	bool				isInChannel(Channel &chan) const;
+	bool				addChannel(Channel *chan);//bool/exception ?
+	void				removeChannel(Channel *chan);//remove le client aussi dans le channel
+	bool				isInChannel(Channel *chan) const;
 	void				removeAllChannel();//appelle removeChannel pour chaque Channel du client
 };
-
 
 #endif
