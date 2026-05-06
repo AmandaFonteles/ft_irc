@@ -3,23 +3,22 @@
 /*                                                        :::      ::::::::   */
 /*   Client.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: afontele <afontele@student.42.fr>          +#+  +:+       +#+        */
+/*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/28 14:55:46 by aibonade          #+#    #+#             */
-/*   Updated: 2026/05/05 18:00:35 by afontele         ###   ########.fr       */
+/*   Updated: 2026/05/06 14:52:10 by aibonade         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 # include "../includes/Client.hpp"
 
-
 /********CONSTRUCTORS & DESTRUCTOR********/
-Client::Client():_socketFd(-1), _passOk(false), _registered(false)//pour moi on pourrait presque le virer, sinon on met le fd a cb ?
+Client::Client():_socketFd(-1), _passOk(false), _registered(false)
 {
 	return;
 }
 
-Client::Client(Client const &cpy):_socketFd(cpy._socketFd), _nickname(cpy._nickname), _username(cpy._username), _passOk(cpy._passOk), _registered(cpy._registered), _channels(cpy._channels), _bufferIn(cpy._bufferIn), _bufferOut(cpy._bufferOut)
+Client::Client(Client const &cpy):_socketFd(cpy._socketFd), _passOk(cpy._passOk), _nickname(cpy._nickname), _username(cpy._username), _registered(cpy._registered), _channels(cpy._channels), _bufferIn(cpy._bufferIn), _bufferOut(cpy._bufferOut)
 {
 	return;
 }
@@ -44,7 +43,7 @@ void	Client::set_nickname(std::string nickname)//TO DO
 
 void	Client::set_username(std::string username)
 {
-	if (_username.empty() && !username.empty())
+	// if (_username.empty() && !username.empty())
 		_username = username;
 	return;//exception ? Booleen ?
 }
@@ -125,18 +124,25 @@ std::string	&Client::get_bufferOut()
 
 bool	Client::addChannel(Channel *chan)//bool/exception ?//TO DO //chan existe bien => map de server ? mais ce sera avant d'appeler cette fonction qu'on le saura ça
 {
+	if (chan == NULL)
+		return (false);
 	//chan != NULL
 	//Essayer d'ajouter le client dans le chan avec addClient (=> dedans on le vire aussi de Invite si il est invite et on le met dans les operators s'il est le premier a rejoindre le chan)
 		//si true on met le chan dans le client
 		//si false on abort le truc
+	return (true);
 }
-void	Client::removeChannel(Channel *chan)//remove le client aussi dans le channel//TO DO
+
+bool	Client::removeChannel(Channel *chan)//remove le client aussi dans le channel//TO DO
 {
+	if (chan == NULL)
+		return (false);
 	//chan !NULL
 	//Verifier que le client est bien dans le chan (ici)
 	//Essayer de remove le client dans chan avec removeMember (=> dedans on le vire aussi dans operators et surtout on check si le client est bien membre du chan labas et si plus de membres on suppr le chan)
 		//si true on vire le chan dans le client
 		//si false on abort le truc
+	return (true);
 }
 
 void	Client::removeAllChannel()//appelle removeChannel pour chaque Channel du client//TO DO

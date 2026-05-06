@@ -6,47 +6,47 @@
 /*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/28 14:54:05 by aibonade          #+#    #+#             */
-/*   Updated: 2026/05/03 17:51:54 by aibonade         ###   ########.fr       */
+/*   Updated: 2026/05/06 15:04:03 by aibonade         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 # include "../includes/Channel.hpp"
 
 /********CONSTRUCTORS & DESTRUCTOR********/
-Channel::Channel():_name("default"), _topic("default"), _key(""), _limit(0), _inviteOnly(false), _topicProtected(false)
+Channel::Channel():_name("default"), _topic(""), _key(""), _limit(0), _inviteOnly(false), _topicProtected(false)
 {
 	return;
 }
 
-Channel::Channel(std::string name):_name(name), _topic("no topic set"), _key(""), _limit(0), _inviteOnly(false), _topicProtected(false)
+Channel::Channel(std::string name):_name(name), _topic(""), _key(""), _limit(0), _inviteOnly(false), _topicProtected(false)
 {
 	return;
 }
 
 Channel::~Channel()	{ return; }
 
-Channel::Channel(Channel const &cpy):_name(cpy._name), _topic(cpy._topic), _key(cpy._key), _limit(cpy._limit), _inviteOnly(cpy._inviteOnly), _topicProtected(cpy._inviteOnly), _members(cpy._members), _operators(cpy._operators)
+Channel::Channel(Channel const &cpy):_name(cpy._name), _topic(cpy._topic), _members(cpy._members), _operators(cpy._operators), _invited(cpy._invited), _key(cpy._key), _limit(cpy._limit), _inviteOnly(cpy._inviteOnly), _topicProtected(cpy._inviteOnly)
 {
 	return;
 }
 
 /********SETTERS********/
-//Client const &c = le client qui demande a faire l'operation, comme ca on checke s'il peut
-void	Channel::set_topic(std::string newTopic, Client const &c)
+//Client const *c = le client qui demande a faire l'operation, comme ca on checke s'il peut
+void	Channel::set_topic(std::string newTopic, Client const *c)
 {
 	if ((_topicProtected && isOperator(c)) || !_topicProtected)
 		_topic = newTopic;
 	return;//on doit faire un message ? Si oui je le mettrais bien dans la fonction qui appellera celle-ci avec un bool sur celle là
 }
 
-void	Channel::set_key(std::string key, Client const &c)
+void	Channel::set_key(std::string key, Client const *c)
 {
 	if (isOperator(c))//checker si c'est protege et comment + s'il faut une surcharge pour le cas ou on n'a pas d'appel client
 		_key = key;
 	return;//on doit faire un message ? Si oui je le mettrais bien dans la fonction qui appellera celle-ci avec un bool sur celle là
 }
 
-void	Channel::set_limit(unsigned int limit, Client const &c)
+void	Channel::set_limit(unsigned int limit, Client const *c)
 {
 	//Si déjà des participants la limit est set donc on ne peut pas JOIN par dessus mais ça ne change rien pour les gens qui sont déjà là
 	if (isOperator(c))//checker si c'est vraiment protege + s'il faut une surcharge pour le cas ou on n'a pas d'appel client
@@ -54,14 +54,14 @@ void	Channel::set_limit(unsigned int limit, Client const &c)
 	return;
 }
 
-void	Channel::set_inviteOnly(bool value, Client const &c)
+void	Channel::set_inviteOnly(bool value, Client const *c)
 {
 	if (isOperator(c))//checker si c'est protege + s'il faut une surcharge pour le cas ou on n'a pas d'appel client
 		_inviteOnly = value;
 	return;
 }
 
-void	Channel::set_topicProtected(bool value, Client const &c)
+void	Channel::set_topicProtected(bool value, Client const *c)
 {
 	if (isOperator(c))//checker si c'est protege + s'il faut une surcharge pour le cas ou on n'a pas d'appel client
 		_topicProtected = value;
@@ -80,7 +80,7 @@ std::string	Channel::get_topic() const
 }
 
 // std::set<Client &>	Channel::get_members() const;//set ? string ? print ? //TO DO
-// std::set<Client const &>	Channel::get_operators() const;//set ? string ? print ? //TO DO
+// std::set<Client const *>	Channel::get_operators() const;//set ? string ? print ? //TO DO
 
 unsigned int	Channel::get_limit() const
 {
@@ -114,19 +114,19 @@ Channel	&Channel::operator=(Channel const &to_affect)//copier la data depuis la 
 	return (*this);
 }
 
-// bool	Channel::addMember(Client const &newMember);//void + Exception ? //TO DO //On considere que la clef a ete checkee dans le JOIN ! Idem pour le invite
-// bool	Channel::removeMember(Client const &member);//void + Exception ? //TO DO
-// bool	Channel::addOperator(Client const &newOperator);//void + Exception ? //TO DO
-// bool	Channel::removeOperator(Client const &op);//void + Exception ? //TO DO
+// bool	Channel::addMember(Client const *newMember);//void + Exception ? //TO DO //On considere que la clef a ete checkee dans le JOIN ! Idem pour le invite
+// bool	Channel::removeMember(Client const *member);//void + Exception ? //TO DO
+// bool	Channel::addOperator(Client const *newOperator);//void + Exception ? //TO DO
+// bool	Channel::removeOperator(Client const *op);//void + Exception ? //TO DO
 
-bool	Channel::isMember(Client &c)//on peut tenter de passer par un recast pour ajouter des consts corrects... mais flemme
+bool	Channel::isMember(Client *c)//on peut tenter de passer par un recast pour ajouter des consts corrects... mais flemme
 {
 	if (_members.find(c) == _members.end())//alors je ne sais pas pk il rale...
 		return (false);
 	return (true);
 }
 
-bool	Channel::isOperator(Client const &c) const
+bool	Channel::isOperator(Client const *c) const
 {
 	if (_operators.find(c) == _operators.end())
 		return (false);

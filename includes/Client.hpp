@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: afontele <afontele@student.42.fr>          +#+  +:+       +#+        */
+/*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/28 12:55:34 by aibonade          #+#    #+#             */
-/*   Updated: 2026/05/05 18:22:02 by afontele         ###   ########.fr       */
+/*   Updated: 2026/05/06 14:52:25 by aibonade         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,7 +24,7 @@ private:
 	int					_socketFd;
 	bool				_passOk;//passe a true si le client utilise PASS avec le mot de passe donne au lancement du serveur=>ou est stocke ce mdp ?
 	std::string			_nickname;
-	std::string			_username;//setter a proteger on ne peut le modifier qu'au debut
+	std::string			_username;
 	bool				_registered;//passe a true quand le client a passe toute la phase d'enregistrement
 	std::set<Channel *>	_channels;// <const> ? et surtout strings => on utiliserait la map du serveur pour retrouver le bon serveur ? 
 	std::string			_bufferIn;//besoin de plusieurs ? //public?
@@ -62,7 +62,7 @@ public:
 
 //other methods
 	bool				addChannel(Channel *chan);//bool/exception ?
-	void				removeChannel(Channel *chan);//remove le client aussi dans le channel
+	bool				removeChannel(Channel *chan);//remove le client aussi dans le channel
 	bool				isInChannel(Channel *chan) const;
 	void				removeAllChannel();//appelle removeChannel pour chaque Channel du client
 };
