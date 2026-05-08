@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   CommandHandler.cpp                                 :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: afontele <afontele@student.42.fr>          +#+  +:+       +#+        */
+/*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/05 15:55:21 by dnayel            #+#    #+#             */
-/*   Updated: 2026/05/05 18:01:48 by afontele         ###   ########.fr       */
+/*   Updated: 2026/05/08 19:04:17 by aibonade         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -132,4 +132,25 @@ void CommandHandler::handleUSER(Server &server, Client &client, const Message &m
 //La spec indique que si un serveur Ident est disponible, le username fourni par Ident remplace celui de USER — pour ft_irc, on utilise toujours celui de USER.
 //Le username peut être préfixé d'un ~ si pas d'Ident (convention serveur) — pour ft_irc, on stocke tel quel.
 //realname peut contenir n'importe quel caractère (espaces inclus) car c'est un trailing.
+}
+
+bool	CommandHandler::isMemberChannel(Client *c, Channel *chan)
+{
+	if (chan->isMember(c) && c->isInChannel(chan))
+		return (true);
+	return (false);
+}
+
+bool	CommandHandler::checkChannelKey(Channel const *chan, std::string const key)
+{
+	if (chan->hasKey())
+		return (chan->isKey(key));
+	return (true);
+}
+
+bool	CommandHandler::checkLimit(Channel const *chan)//true = limit channel non atteinte, false = limite atteinte
+{
+	if (chan->get_limit() && (chan->get_limit() <= chan->nbMembers()))
+		return (false);
+	return (true);
 }

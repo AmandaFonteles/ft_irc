@@ -6,14 +6,14 @@
 /*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/28 14:55:46 by aibonade          #+#    #+#             */
-/*   Updated: 2026/05/08 17:35:35 by aibonade         ###   ########.fr       */
+/*   Updated: 2026/05/08 19:06:11 by aibonade         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 # include "../includes/Client.hpp"
 
 /********CONSTRUCTORS & DESTRUCTOR********/
-Client::Client():_socketFd(-1), _passOk(false), _registered(false)
+Client::Client():_socketFd(-1), _passOk(false), _nickname(""), _username(""), _registered(false), _bufferIn(""), _bufferOut("")
 {
 	return;
 }
@@ -23,7 +23,7 @@ Client::Client(Client const &cpy):_socketFd(cpy._socketFd), _passOk(cpy._passOk)
 	return;
 }
 
-Client::Client(int socketFd):_socketFd(socketFd), _passOk(false), _registered(false)
+Client::Client(int socketFd):_socketFd(socketFd), _passOk(false), _nickname(""), _username(""), _registered(false), _bufferIn(""), _bufferOut("")
 {
 	return;
 }
