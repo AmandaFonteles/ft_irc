@@ -6,7 +6,7 @@
 /*   By: afontele <afontele@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 21:54:23 by afontele          #+#    #+#             */
-/*   Updated: 2026/05/05 18:11:55 by afontele         ###   ########.fr       */
+/*   Updated: 2026/05/08 19:18:50 by afontele         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,8 +37,17 @@ Server::Server(const std::string &port, const std::string &password) : _password
 // Server	&Server::operator=(Server const &other) {}
 
 Server::~Server() {
+	// 1. close server socket
 	close(_serverSocket);
-	//loop to delete vector of Clients
+	// 2. loop to delete _clients and _channels
+	for (std::map<int,Client *>::iterator it = _clients.begin(); it != _clients.end(); it++) {
+		close(it->first);
+		delete it->second;
+	}
+	// 3. Empty maps _clients and _channels
+	_clients.clear();
+	
+	std::cout << "[DEBUG] Server shutdown." << std::endl;
 }
 
 //Network Setup
@@ -142,6 +151,13 @@ void	Server::ServerRun() {
 				// 4. If it's a client fd -> call handleClientData(fd)
 				else
 					receiveClientData(_pollFds[i].fd);
+				// 5. Use continue to skip POLLOUT in the same loop.
+				// - If cleanClosure() is called, we need to manage the vector, so _pollFds[i] may not be the same in both ifs
+				continue ;
+			}
+			// 6. Check for POLLOUT (to send data to clients)
+			if (_pollFds[i].revents & POLLOUT) {
+				sendMessage(_pollFds[i].fd);
 			}
 		}        
 	}
@@ -171,13 +187,13 @@ void	Server::acceptNewClient() {
 	// 3. Add the new client to our poll() vector
 	// - Add the new client to client map also
 	struct pollfd	clientpfd;
-	// Client *newClient = new Client(clientSocket);
-	// if (!newClient) {
-	// 	std::cerr << "Error: New failed." << std::endl;
-	// 	return ;
-	// }
+	Client *newClient = new Client(clientSocket);
+	if (!newClient) {
+		std::cerr << "Error: New failed." << std::endl;
+		return ;
+	}
 	
-	// _clients[clientSocket] = newClient;
+	_clients[clientSocket] = newClient;
 	clientpfd.fd = clientSocket;
 	clientpfd.events = POLLIN;
 	clientpfd.revents = 0;
@@ -195,26 +211,26 @@ void	Server::receiveClientData(int clientFd) {
 	std::memset(buff, 0, sizeof(buff));
 
 	// 1. Read data from the client
+	// ? recv(clientFd, &buff, ...)
 	ssize_t	bytesRead = recv(clientFd, buff, sizeof(buff) - 1, 0);
 
 	// - Error checking
 	if (bytesRead < 0) {
 		std::cerr << "Error: Server failed on receiving message from client FD: "<< clientFd << std::endl;
-		//cleanClosure()?
-		return ;
+		cleanClosure(clientFd);
 	}
 	
 	// 2. Clean clousure
 	else if (bytesRead == 0) {
 		//remove client from vector AND map
 		cleanClosure(clientFd);
-		return ;
 	}
 
+	// 3. Include received data to _bufferIn
 	else {
 		std::string	msg = buff;
 		std::cout << "[DEBUG] Message received: " << msg << std::endl;
-		//handleBuff();
+		_clients[clientFd]->set_bufferIn(msg);
 	}
 }
 
@@ -226,14 +242,63 @@ void	Server::cleanClosure(int clientFd) {
 	// 2. Close the socket
 	close(clientFd);
 	
-	// 2. Delete from map
-	// delete _clients[clientFd];
+	// 2. Delete from map and erase its key
+	delete _clients[clientFd];
+	_clients.erase(clientFd);
 	
 	//3. Remove from _pollFds
 	for (size_t i = 0; i < _pollFds.size(); i++) {
 		if (_pollFds[i].fd == clientFd) {
 			_pollFds.erase(_pollFds.begin() + i); //use vector method and pass the iterator of the position
 			break ;
+		}
+	}
+}
+
+void	Server::switchPollOut(int clientFd) {
+	// 1. Switch events to POLLIN | POLLLOUT (server want to send data to client)
+	for (size_t i = 0; i < _pollFds.size(); i++) {
+		if (_pollFds[i].fd == clientFd) {
+			_pollFds[i].events = POLLIN | POLLOUT;
+			break ;
+		}
+	}
+}
+
+void	Server::sendMessage(int clientFd) {
+	std::string	&msg = _clients[clientFd]->get_bufferOut();
+	
+	// ? Do we hve something to handle if bufferOut is empty? It shouldn't happen
+	if (msg.empty())
+		return ;
+
+	// 1. Use send() to send data to client
+	ssize_t	bytesSent = send(clientFd, msg.c_str(), msg.length(), 0);
+	
+	// - Error checking
+	if (bytesSent < 0) {
+		std::cerr << "Error: Server failed on sending message to client FD: "<< clientFd << std::endl;
+		cleanClosure(clientFd);
+	}
+	
+	// 2. Handle incomplete messages
+	else if (bytesSent != msg.length()) {
+		std::cout << "[DEBUG] Partial send. Sent " << bytesSent << " out of " << msg.length() << " bytes." << std::endl;
+		// - We erase all the bytes sent to client and don't change events to POLLIN.
+		// - Like that poll loop will call send message again till bytesSent == msg.length()
+		msg.erase(0, bytesSent);
+	}
+	else {
+		// 2. Clean _bufferOut
+		// ? Ask Nayel how to handle the _buffers
+		msg.clear();
+		
+		// 3. Switch event back to POLLIN only
+		for (size_t i = 0; i < _pollFds.size(); i++) {
+			if (_pollFds[i].fd == clientFd) {
+				_pollFds[i].events = POLLIN;
+				break ;
+			}
 		}
 	}
 }
