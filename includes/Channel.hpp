@@ -6,7 +6,7 @@
 /*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/28 12:55:22 by aibonade          #+#    #+#             */
-/*   Updated: 2026/05/06 15:05:02 by aibonade         ###   ########.fr       */
+/*   Updated: 2026/05/08 16:32:37 by aibonade         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,7 +27,7 @@ private:
 	std::set<Client const *>	_operators;
 	std::set<Client const *>	_invited;
 	std::string					_key;//"" => no key
-	unsigned int				_limit;//nb user max => 0 = no limit ?
+	size_t						_limit;//nb user max => 0 = no limit ?
 	bool						_inviteOnly;
 	bool						_topicProtected;
 //methods 
@@ -37,7 +37,7 @@ private:
 public:
 //constructor/destructor
 								Channel(Channel const &cpy);
-								Channel(std::string name);//comment on le cree ? de quoi on a besoin ?
+								Channel(std::string name);
 								~Channel();
 
 //setters, Client const &c = le client qui demande a faire l'operation, comme ca on checke s'il peut
@@ -50,27 +50,27 @@ public:
 //getters
 	std::string					get_name() const;
 	std::string					get_topic() const;
-	std::set<Client &>			get_members() const;//set ? string ? print ?
-	std::set<Client const &>	get_operators() const;//set ? string ? print ?
-	unsigned int				get_limit() const;
+	// std::set<Client &>			get_members() const;//set ? string ? print ?
+	// std::set<Client const &>	get_operators() const;//set ? string ? print ?
+	size_t						get_limit() const;
 	bool						get_inviteOnly() const;
 	bool						get_topicProtected() const;
 
 //other methods
-	Channel						&operator=(Channel const &to_affect);
-	bool						addMember(Client *newMember);//void + Exception ?
-	bool						removeMember(Client const *member);//void + Exception ?
-	bool						addOperator(Client const *newOperator);//void + Exception ?
-	bool						removeOperator(Client const *op);//void + Exception ?
-	bool						isMember(Client *c);
-	// bool						isMember(Client const &c) const;
+	Channel						&operator=(Channel const &to_affect);//A garder ?
+	bool						addMember(Client *newMember);
+	bool						removeMember(Client *member);
+	bool						addOperator(Client const *newOperator);
+	bool						removeOperator(Client const *op);
+	bool						addInvite(Client const *newMember);
+	bool						removeInvite(Client const *member);
+	bool						isMember(Client *c) const;
 	bool						isOperator(Client const *c) const;
-	bool						isKey(std::string key) const;
-	bool						isInvited(Client const *c) const;//A ajouter sur le cpp
-	bool						isfull() const;//A ajouter sur le cpp
-	bool						hasKey() const;//A ajouter sur le cpp
-	bool						addInvite(Client const *newmember);//void + Exception ?//A ajouter sur le cpp
-	bool						removeInvite(Client const *member);//void + Exception ?//A ajouter sur le cpp
+	bool						isKey(std::string const key) const;
+	bool						isInvited(Client const *c) const;
+	bool						isFull() const;
+	bool						hasKey() const;
+	size_t						nbMembers() const;//utile ? 
 };
 
 

@@ -6,7 +6,7 @@
 /*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/28 14:54:05 by aibonade          #+#    #+#             */
-/*   Updated: 2026/05/06 15:04:03 by aibonade         ###   ########.fr       */
+/*   Updated: 2026/05/08 16:33:29 by aibonade         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -82,7 +82,7 @@ std::string	Channel::get_topic() const
 // std::set<Client &>	Channel::get_members() const;//set ? string ? print ? //TO DO
 // std::set<Client const *>	Channel::get_operators() const;//set ? string ? print ? //TO DO
 
-unsigned int	Channel::get_limit() const
+size_t	Channel::get_limit() const
 {
 	return (this->_limit);
 }
@@ -98,7 +98,7 @@ bool	Channel::get_topicProtected() const
 }
 
 /********OTHER METHODS********/
-Channel	&Channel::operator=(Channel const &to_affect)//copier la data depuis la source vers cet objet sauf les membres const
+/*Channel	&Channel::operator=(Channel const &to_affect)//copier la data depuis la source vers cet objet sauf les membres const
 {
 	if (this != &to_affect)
 	{
@@ -112,16 +112,97 @@ Channel	&Channel::operator=(Channel const &to_affect)//copier la data depuis la 
 		_topic = to_affect._topic;
 	}
 	return (*this);
+}*/
+
+bool	Channel::addMember(Client *newMember)
+{
+	std::pair<std::set<Client *>::iterator, bool>	ret;
+	// if (this->isMember(newMember))
+	// 	return (false);
+	ret = _members.insert(newMember);//Si _members contient deja newMember, insert ne l'insere pas une seconde fois mais renvoie l'iterateur de sa position dans le set et indique qu'il n'a pas fait d'insertion en mettant le deuxieme element de la paire a "false", autrement c'est true et on recupere l'iterateur du nouvel element
+	return (ret.second);
 }
 
-// bool	Channel::addMember(Client const *newMember);//void + Exception ? //TO DO //On considere que la clef a ete checkee dans le JOIN ! Idem pour le invite
-// bool	Channel::removeMember(Client const *member);//void + Exception ? //TO DO
-// bool	Channel::addOperator(Client const *newOperator);//void + Exception ? //TO DO
-// bool	Channel::removeOperator(Client const *op);//void + Exception ? //TO DO
-
-bool	Channel::isMember(Client *c)//on peut tenter de passer par un recast pour ajouter des consts corrects... mais flemme
+bool	Channel::removeMember(Client *member)//On peut aussi faire plus simplement cette fonction avec .erase(member), mais ca me paraissait plus sur comme ca, on maitrise mieux ce qu'il se passe je trouve... 
 {
-	if (_members.find(c) == _members.end())//alors je ne sais pas pk il rale...
+	std::set<Client *>::iterator	it;
+
+	it = _members.find(member);
+	if (it == _members.end())
+		return (false);
+	_members.erase(it);
+	return (true);
+}
+
+bool	Channel::addOperator(Client const *newOperator)
+{
+	std::pair<std::set<Client const *>::iterator, bool>	ret;
+
+	ret = _operators.insert(newOperator);
+	return (ret.second);
+}
+
+bool	Channel::removeOperator(Client const *op)
+{
+	std::set<Client const *>::iterator	it;
+
+	it = _operators.find(op);
+	if (it == _operators.end())
+		return (false);
+	_operators.erase(it);
+	return (true);
+}
+
+bool	Channel::addInvite(Client const *newMember)
+{
+	std::pair<std::set<Client const *>::iterator, bool>	ret;
+
+	ret = _invited.insert(newMember);
+	return (ret.second);
+}
+
+bool	Channel::removeInvite(Client const *member)
+{
+	std::set<Client const *>::iterator	it;
+
+	it = _invited.find(member);
+	if (it == _invited.end())
+		return (false);
+	_invited.erase(it);
+	return (true);
+}
+bool	Channel::hasKey() const
+{
+	if (_key.empty() == true)
+		return (false);
+	return (true);
+}
+
+bool	Channel::isFull() const
+{
+	if (_limit)
+	{
+		if (_members.size() >=_limit)
+			return (true);
+	}
+	return (false);
+}
+
+size_t	Channel::nbMembers() const
+{
+	return (_members.size());
+}
+
+bool	Channel::isInvited(Client const *c) const
+{
+	if (_invited.find(c) == _invited.end())
+		return (false);
+	return (true);
+}
+
+bool	Channel::isMember(Client *c) const
+{
+	if (_members.find(c) == _members.end())
 		return (false);
 	return (true);
 }
@@ -133,7 +214,7 @@ bool	Channel::isOperator(Client const *c) const
 	return (true);
 }
 
-bool	Channel::isKey(std::string key) const
+bool	Channel::isKey(std::string const key) const
 {
 	if (key == _key)//A voir si ya des changements a faire niveau secu
 		return (true);

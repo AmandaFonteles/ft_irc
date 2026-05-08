@@ -6,7 +6,7 @@
 /*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/28 14:55:46 by aibonade          #+#    #+#             */
-/*   Updated: 2026/05/06 14:52:10 by aibonade         ###   ########.fr       */
+/*   Updated: 2026/05/08 17:35:35 by aibonade         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,7 +45,7 @@ void	Client::set_username(std::string username)
 {
 	// if (_username.empty() && !username.empty())
 		_username = username;
-	return;//exception ? Booleen ?
+	return;
 }
 
 void	Client::set_passOk(bool value)
@@ -76,7 +76,6 @@ int	Client::get_socketFd() const
 {
 	return (_socketFd);
 }
-
 
 std::string	Client::get_nickname() const
 {
@@ -121,33 +120,41 @@ std::string	&Client::get_bufferOut()
 // 	return (*this);
 // }
 
-
-bool	Client::addChannel(Channel *chan)//bool/exception ?//TO DO //chan existe bien => map de server ? mais ce sera avant d'appeler cette fonction qu'on le saura ça
+bool	Client::addChannel(Channel *chan)
 {
-	if (chan == NULL)
+	std::pair<std::set<Channel *>::iterator, bool>	ret;
+
+	if (chan->isMember(this))
+	{
+		ret = this->_channels.insert(chan);
+		return (ret.second);
+	}
+	return (false);
+}
+
+bool	Client::removeChannel(Channel *chan)
+{
+	std::set<Channel *>::iterator	it;
+
+	if (chan->isMember(this))
 		return (false);
-	//chan != NULL
-	//Essayer d'ajouter le client dans le chan avec addClient (=> dedans on le vire aussi de Invite si il est invite et on le met dans les operators s'il est le premier a rejoindre le chan)
-		//si true on met le chan dans le client
-		//si false on abort le truc
+	it = _channels.find(chan);
+	if (it == _channels.end())
+		return (false);
+	_channels.erase(it);
 	return (true);
 }
 
-bool	Client::removeChannel(Channel *chan)//remove le client aussi dans le channel//TO DO
+void	Client::removeAllChannel()//penser a d'abord appeler removeMember autant que necessaire dans le handdler !
 {
-	if (chan == NULL)
-		return (false);
-	//chan !NULL
-	//Verifier que le client est bien dans le chan (ici)
-	//Essayer de remove le client dans chan avec removeMember (=> dedans on le vire aussi dans operators et surtout on check si le client est bien membre du chan labas et si plus de membres on suppr le chan)
-		//si true on vire le chan dans le client
-		//si false on abort le truc
-	return (true);
-}
+	std::set<Channel *>::iterator	it = _channels.begin();
 
-void	Client::removeAllChannel()//appelle removeChannel pour chaque Channel du client//TO DO
-{
-	//appeler removeChannel un par un
+	while (it != _channels.end())
+	{
+		this->removeChannel(*it);
+		it++;
+	}
+	return;
 }
 
 bool	Client::isInChannel(Channel *chan) const
