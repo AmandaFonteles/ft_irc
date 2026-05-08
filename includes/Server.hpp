@@ -6,7 +6,7 @@
 /*   By: afontele <afontele@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 21:54:11 by afontele          #+#    #+#             */
-/*   Updated: 2026/05/05 18:19:34 by afontele         ###   ########.fr       */
+/*   Updated: 2026/05/08 18:17:49 by afontele         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,9 +40,8 @@ private:
 	std::string const	_password;
 	int					_serverSocket; //fd
 	std::vector<struct pollfd>	_pollFds; //vector of pollfd structs necessary for poll()
-	//map clients;map chanells
-	// std::map<std::string, Channel *> _channels; //map of pointers
-	// std::map<int, Client *>	_clients;
+	std::map<std::string, Channel *> _channels; //map of pointers
+	std::map<int, Client *>	_clients;
 	
 	Server();
 public:	
@@ -59,9 +58,11 @@ public:
 	void	acceptNewClient();
 	void	receiveClientData(int clientFd);
 	void	cleanClosure(int clientFd);
+	void	switchPollOut(int clientFd);
+	void	sendMessage(int clientFd);
 
 	//Channel methods
-	Channel  *getChannel(std::string name);
+	Channel  *getChannel(std::string name); //RETURN NULL IF NO CHANNEL
 	Channel  *createChannel(std::string name);
 	void     deleteChannel(Channel *chan);
 };
