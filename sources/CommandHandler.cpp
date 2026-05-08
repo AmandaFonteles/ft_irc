@@ -6,7 +6,7 @@
 /*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/05 15:55:21 by dnayel            #+#    #+#             */
-/*   Updated: 2026/05/08 19:04:17 by aibonade         ###   ########.fr       */
+/*   Updated: 2026/05/08 19:07:46 by aibonade         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -134,6 +134,8 @@ void CommandHandler::handleUSER(Server &server, Client &client, const Message &m
 //realname peut contenir n'importe quel caractère (espaces inclus) car c'est un trailing.
 }
 
+
+//Aileen part :p
 bool	CommandHandler::isMemberChannel(Client *c, Channel *chan)
 {
 	if (chan->isMember(c) && c->isInChannel(chan))
