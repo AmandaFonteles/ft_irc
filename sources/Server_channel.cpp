@@ -6,14 +6,14 @@
 /*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/09 10:40:24 by aibonade          #+#    #+#             */
-/*   Updated: 2026/05/09 11:13:03 by aibonade         ###   ########.fr       */
+/*   Updated: 2026/05/09 11:34:00 by aibonade         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/Server.hpp"
 
 
-Channel	*Server::get_Channel(std::string const name)
+Channel	*Server::get_channel(std::string const name)
 {
 	std::map<std::string, Channel *>::iterator it;
 
@@ -23,9 +23,9 @@ Channel	*Server::get_Channel(std::string const name)
 	return (it->second);
 }
 
-Channel	*Server::createChannel(std::string const name)//retourne NULL si erreur ?
+Channel	*Server::createChannel(std::string const name)
 {
-	if (get_Channel(name))//il existe deja
+	if (get_channel(name))//il existe deja
 		return (NULL);
 
 	//je cree le channel avec new
@@ -41,4 +41,17 @@ void	Server::deleteChannel(Channel *chan)
 		delete chan;
 	return;
 }
-// Client	*Server::get_Client(std::string const nickname);//retourne NULL si pas trouve
+
+Client	*Server::get_client(std::string const nickname)
+{
+	std::map<int, Client *>::iterator it;
+
+	it = _clients.begin();
+	while (it != _clients.end())
+	{
+		if (it->second->get_nickname() == nickname)
+			return (it->second);
+		it++;
+	}
+	return (NULL);
+}
