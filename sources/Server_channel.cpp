@@ -6,12 +6,11 @@
 /*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/09 10:40:24 by aibonade          #+#    #+#             */
-/*   Updated: 2026/05/09 11:34:00 by aibonade         ###   ########.fr       */
+/*   Updated: 2026/05/09 12:23:28 by aibonade         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/Server.hpp"
-
 
 Channel	*Server::get_channel(std::string const name)
 {

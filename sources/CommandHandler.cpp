@@ -6,7 +6,7 @@
 /*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/05 15:55:21 by dnayel            #+#    #+#             */
-/*   Updated: 2026/05/08 19:07:46 by aibonade         ###   ########.fr       */
+/*   Updated: 2026/05/09 19:31:33 by aibonade         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -155,4 +155,98 @@ bool	CommandHandler::checkLimit(Channel const *chan)//true = limit channel non a
 	if (chan->get_limit() && (chan->get_limit() <= chan->nbMembers()))
 		return (false);
 	return (true);
+}
+
+
+// // bool	checkChannelExists(Server const &server, std::string const &channel);//inutile ? 
+// bool	CommandHandler::checkClientExists(Server const &server, std::string const &nickname);//verifier aussi que s'il existe il est bien register//pointeur sur client en retour ?
+// bool	CommandHandler::isValidChannelName(Server const &server, std::string const &name);
+// bool	CommandHandler::isValidClientName(Server const &server, std::string const &name);
+
+void CommandHandler::handleJOIN(Server &server, Client *c, const Message &msg)
+{
+	//std::vector<std::string>	params;
+	//variables : 
+	//	- std::string	key_tmp;
+	//	- std::string	chan_tmp;
+	std::string	chan;
+	std::string	key;
+	std::string lst_chan;
+	std::string lst_key = "";
+	size_t		pos;
+	Channel		*chan_ptr;
+	bool		no_error = false;
+
+	//checker que j'ai au moins 1 param non vide
+	if (!msg.params.size() || msg.params[0].empty())
+		;//ERR_NEEDMOREPARAMS(461)
+	lst_chan = msg.params[0];
+	if (msg.params.size() > 1)
+		lst_key = msg.params[1];
+	//si msg->param[0] = "0" 
+	if (lst_chan == "0")
+	{
+		;//=> On appelle Part pour chaque channel
+		return;
+	}
+
+	//boucler jusqu'a ce que msg.params[0] (chan) soit vide
+	while (!lst_chan.empty())
+	{
+	//	- recuperer le chan
+		pos = lst_chan.find(",", 0);
+		chan = lst_chan.substr(0, pos);
+		lst_chan.erase(0, pos + 1);
+	//	- recuperer la key si ya sinon mettre a ""
+		if (!lst_key.empty())
+		{
+			pos = lst_key.find(",", 0);
+			key = lst_key.substr(0, pos);
+			lst_key.erase(0, pos + 1);
+		}
+		else
+			key = "";
+
+	//	- Channel exist
+		chan_ptr = server.get_channel(chan);
+		if (chan_ptr && !isMemberChannel(c, chan_ptr))//mettre ce qu'il y a dedans dans un bloc qui retourne true si reussi en mode "no_error = checksJoinIfChannelExists(c, chan_ptr, key);" A voir avec les messages d'erreur ? 
+		{
+			if (checkLimit(chan_ptr))
+				;//ERR_CHANNELISFULL (471)
+			else if (chan_ptr->get_inviteOnly() && !chan_ptr->isInvited(c))
+				;//ERR_INVITEONLYCHAN(473)
+			else if (checkChannelKey(chan_ptr, key))
+				;//ERR_BADCHANNELKEY (475)
+			else
+				no_error = true;
+		}
+		else if (chan_ptr == NULL)//idem avec "no_error = checksJoinIfChannelDoesNotExists(c, chan_ptr, key);" ? A voir avec les messages d'erreur ?
+		{
+			if (!isValidChannelName(server, chan))//(commence par # on ne gere pas les autres vu que notre serveur est uniquement local) + /!\insensible a la casse + n'existe pas deja !
+				;//ERR_NOSUCHCHANNEL (403)
+			else
+			{
+				chan_ptr = server.createChannel(chan);
+				chan_ptr->addOperator(c);
+				no_error = true;
+			}
+		}
+		if (no_error)
+		{
+	//	- Si tout s'est bien passe jusqu'ici c devient membre
+			chan_ptr->addMember(c);
+			c->addChannel(chan_ptr);
+	//	- Envoyer message a tous les membres (meme c) ":pouet!user@localhost JOIN #Tagada\r\n" avec pouet le nouveau membre et #Tagada le channel
+	//	- Envoyer messages a c :
+	//		- Le topic du serveur RPL_TOPIC (332)
+	//		- RPL_NAMREPLY (353) => NAME commande
+	//		- RPL_ENDOFNAMES (366) => idem
+			no_error = false;
+		}
+	}
+
+	//Questions : 
+	//Si + de clefs que de channels => clefs supplementaires ignorees
+	//Comment gérer les messages d'erreur non bloquants => bool no_error
+	return;
 }
