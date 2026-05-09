@@ -6,7 +6,7 @@
 /*   By: afontele <afontele@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 21:54:23 by afontele          #+#    #+#             */
-/*   Updated: 2026/05/08 19:18:50 by afontele         ###   ########.fr       */
+/*   Updated: 2026/05/09 11:47:01 by afontele         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -231,6 +231,11 @@ void	Server::receiveClientData(int clientFd) {
 		std::string	msg = buff;
 		std::cout << "[DEBUG] Message received: " << msg << std::endl;
 		_clients[clientFd]->set_bufferIn(msg);
+
+		// - TEST POLLOUT (Enlever apres?)
+		std::string reply = "[DEBUG]Server heard: " + msg;
+		_clients[clientFd]->set_bufferOut(reply);
+		switchPollOut(clientFd);
 	}
 }
 
@@ -282,7 +287,7 @@ void	Server::sendMessage(int clientFd) {
 	}
 	
 	// 2. Handle incomplete messages
-	else if (bytesSent != msg.length()) {
+	else if (bytesSent < static_cast<ssize_t>(msg.length())) {
 		std::cout << "[DEBUG] Partial send. Sent " << bytesSent << " out of " << msg.length() << " bytes." << std::endl;
 		// - We erase all the bytes sent to client and don't change events to POLLIN.
 		// - Like that poll loop will call send message again till bytesSent == msg.length()
@@ -291,7 +296,7 @@ void	Server::sendMessage(int clientFd) {
 	else {
 		// 2. Clean _bufferOut
 		// ? Ask Nayel how to handle the _buffers
-		msg.clear();
+		msg.clear(); //msg.erase(0, bytesSent);
 		
 		// 3. Switch event back to POLLIN only
 		for (size_t i = 0; i < _pollFds.size(); i++) {
