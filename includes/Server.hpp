@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: afontele <afontele@student.42.fr>          +#+  +:+       +#+        */
+/*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 21:54:11 by afontele          #+#    #+#             */
-/*   Updated: 2026/05/05 18:19:34 by afontele         ###   ########.fr       */
+/*   Updated: 2026/05/09 10:40:00 by aibonade         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,8 +41,8 @@ private:
 	int					_serverSocket; //fd
 	std::vector<struct pollfd>	_pollFds; //vector of pollfd structs necessary for poll()
 	//map clients;map chanells
-	// std::map<std::string, Channel *> _channels; //map of pointers
-	// std::map<int, Client *>	_clients;
+	std::map<std::string, Channel *> _channels; //map of pointers
+	std::map<int, Client *>	_clients;
 	
 	Server();
 public:	
@@ -61,9 +61,10 @@ public:
 	void	cleanClosure(int clientFd);
 
 	//Channel methods
-	Channel  *getChannel(std::string name);
-	Channel  *createChannel(std::string name);
-	void     deleteChannel(Channel *chan);
+	Channel	*get_Channel(std::string const name);//retourne NULL si pas trouve
+	Channel	*createChannel(std::string const name);//retourne NULL si erreur ?
+	void	deleteChannel(Channel *chan);
+	Client	*get_Client(std::string const nickname);//retourne NULL si pas trouve
 };
 
 #endif
