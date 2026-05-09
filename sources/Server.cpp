@@ -6,7 +6,7 @@
 /*   By: afontele <afontele@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 21:54:23 by afontele          #+#    #+#             */
-/*   Updated: 2026/05/09 12:08:20 by afontele         ###   ########.fr       */
+/*   Updated: 2026/05/09 17:38:36 by afontele         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -141,7 +141,7 @@ void	Server::ServerRun() {
 		
         // 2. Loop through _pollFds to find which fd triggered an event
 		// - Since poll() returns how many fds flagged and not which ones, this loop is needed
-		for (size_t i = 0; i < _pollFds.size(); i++) {
+		for (size_t i = _pollFds.size() - 1; i >= 0; i--) {
 			// - If _pollFds[i].revents = 0, nothing happened on this socket.
 			// - revents is a bitmap(each bit works as a checkbox), we use bitwise AND to check that the POLLIN box is checked
 			// - The bitwise operation is necessary because the same revents can store POLLIN and other flags, and we want to treat every socket that has POLLIN in it.
@@ -152,11 +152,8 @@ void	Server::ServerRun() {
 				// 4. If it's a client fd -> call handleClientData(fd)
 				else
 					receiveClientData(_pollFds[i].fd);
-				// 5. Use continue to skip POLLOUT in the same loop.
-				// - If cleanClosure() is called, we need to manage the vector, so _pollFds[i] may not be the same in both ifs
-				continue ;
 			}
-			// 6. Check for POLLOUT (to send data to clients)
+			// 5. Check for POLLOUT (to send data to clients)
 			if (_pollFds[i].revents & POLLOUT) {
 				sendMessage(_pollFds[i].fd);
 			}
@@ -244,7 +241,7 @@ void	Server::receiveClientData(int clientFd) {
 void	Server::cleanClosure(int clientFd) {
 	std::cout << "Client FD " << clientFd << " disconnected." << std::endl;
 	// 1. Remove client from channels
-	
+	// _clients[clientFd]->removeAllChannel();
 	// 2. Close the socket
 	close(clientFd);
 	
@@ -261,6 +258,8 @@ void	Server::cleanClosure(int clientFd) {
 	}
 }
 
+// - This function exist to tell the server we have a message to send to a client.
+// - To send a message to a client, we need to save that msg in _bufferOut and call switchPollOut(clientFd)
 void	Server::switchPollOut(int clientFd) {
 	// 1. Switch events to POLLIN | POLLLOUT (server want to send data to client)
 	for (size_t i = 0; i < _pollFds.size(); i++) {
