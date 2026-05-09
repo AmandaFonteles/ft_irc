@@ -6,7 +6,7 @@
 /*   By: afontele <afontele@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 21:54:23 by afontele          #+#    #+#             */
-/*   Updated: 2026/05/09 11:47:01 by afontele         ###   ########.fr       */
+/*   Updated: 2026/05/09 11:51:18 by afontele         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -72,6 +72,7 @@ bool	Server::ServerInit() {
 		std::cerr << "Error: Failed to set socket to allow port reuse." << std::endl;
 		return (false);
 	}
+	
 	
     // 3. Make the socket non-blocking with fcntl() //chercher non bloquant sur discord
 	// ? wHEN THE PROJECT SAYS WE CAN'T USE FCNTL IS JUST FOR SEND AND RECEIAVING MSG? OR HERE AS WELL
