@@ -6,7 +6,7 @@
 /*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/05 15:55:21 by dnayel            #+#    #+#             */
-/*   Updated: 2026/05/10 19:23:59 by aibonade         ###   ########.fr       */
+/*   Updated: 2026/05/10 19:47:57 by aibonade         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -136,14 +136,14 @@ void CommandHandler::handleUSER(Server &server, Client &client, const Message &m
 
 
 //Aileen part :p
-bool	CommandHandler::isMemberChannel(Client *c, Channel *chan)
+bool	CommandHandler::isMemberChannel(Client *c, Channel *chan)///!\si incoherence d'etat entre chan et client ca peut renvoyer une erreur !
 {
 	if (chan->isMember(c) && c->isInChannel(chan))
 		return (true);
 	return (false);
 }
 
-bool	CommandHandler::checkChannelKey(Channel const *chan, std::string const key)
+bool	CommandHandler::checkChannelKey(Channel const *chan, std::string const key)//si chan n'a pas de clef, renvoie true
 {
 	if (chan->hasKey())
 		return (chan->isKey(key));
@@ -157,7 +157,7 @@ bool	CommandHandler::checkLimit(Channel const *chan)//true = limit channel non a
 	return (true);
 }
 
-Client	*CommandHandler::checkClientExists(Server &server, std::string const &nickname)//Checker les pb avec le Server, peut-être enlever la reference et passer par une copie du serveur, mais faut que les adresses Clients restent les memes
+Client	*CommandHandler::checkClientExists(Server &server, std::string const &nickname)
 {
 	Client	*c = server.get_client(nickname);
 
@@ -166,7 +166,7 @@ Client	*CommandHandler::checkClientExists(Server &server, std::string const &nic
 	return (c);
 }
 
-bool	CommandHandler::isValidChannelName(std::string const &name)//(commence par # on ne gere pas les autres vu que notre serveur est uniquement local) + /!\insensible a la casse & n'existe pas deja !
+bool	CommandHandler::isValidChannelName(std::string const &name)
 {
 	//chaine non vide => min 2 max 50 (dont le #)
 	if (name.empty() || name.size() < 2 || name.size() > 50)
@@ -178,7 +178,7 @@ bool	CommandHandler::isValidChannelName(std::string const &name)//(commence par 
 	return (true);
 }
 
-bool	CommandHandler::isValidClientName(Server const &server, std::string const &nickname)//checker que le client n'existe pas deja cote serveur est a faire avant de creer un nouveau client mais c'est pas dans cette fonction :)
+bool	CommandHandler::isValidClientName(std::string const &nickname)//checker que le client n'existe pas deja cote serveur est a faire avant de creer un nouveau client mais c'est pas dans cette fonction :)
 {
 	std::string allowedChar = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 	allowedChar = allowedChar + "abcdefghijklmnopqrstuvwxyz";
