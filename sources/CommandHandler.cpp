@@ -6,7 +6,7 @@
 /*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/05 15:55:21 by dnayel            #+#    #+#             */
-/*   Updated: 2026/05/09 19:31:33 by aibonade         ###   ########.fr       */
+/*   Updated: 2026/05/10 19:23:59 by aibonade         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -157,11 +157,43 @@ bool	CommandHandler::checkLimit(Channel const *chan)//true = limit channel non a
 	return (true);
 }
 
+Client	*CommandHandler::checkClientExists(Server &server, std::string const &nickname)//Checker les pb avec le Server, peut-être enlever la reference et passer par une copie du serveur, mais faut que les adresses Clients restent les memes
+{
+	Client	*c = server.get_client(nickname);
 
-// // bool	checkChannelExists(Server const &server, std::string const &channel);//inutile ? 
-// bool	CommandHandler::checkClientExists(Server const &server, std::string const &nickname);//verifier aussi que s'il existe il est bien register//pointeur sur client en retour ?
-// bool	CommandHandler::isValidChannelName(Server const &server, std::string const &name);
-// bool	CommandHandler::isValidClientName(Server const &server, std::string const &name);
+	if (c == NULL || c->get_registered() == false)
+		return (NULL);
+	return (c);
+}
+
+bool	CommandHandler::isValidChannelName(std::string const &name)//(commence par # on ne gere pas les autres vu que notre serveur est uniquement local) + /!\insensible a la casse & n'existe pas deja !
+{
+	//chaine non vide => min 2 max 50 (dont le #)
+	if (name.empty() || name.size() < 2 || name.size() > 50)
+		return (false);
+	if (name[0] != '#')//=channel local on ne gere pas les autres types de channels
+		return (false);
+	if (name.find_first_of(" ,:\a\r\n") != std::string::npos)
+		return (false);
+	return (true);
+}
+
+bool	CommandHandler::isValidClientName(Server const &server, std::string const &nickname)//checker que le client n'existe pas deja cote serveur est a faire avant de creer un nouveau client mais c'est pas dans cette fonction :)
+{
+	std::string allowedChar = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	allowedChar = allowedChar + "abcdefghijklmnopqrstuvwxyz";
+	allowedChar = allowedChar + "0123456789";
+	allowedChar = allowedChar + "-_[]\\`^{}|";//C'est juste pour que ce soit plus lisible qu'une seule grosse ligne
+
+std::cout << "[DEBUG] allowChar string = \"" << allowedChar << "\""<< std::endl;
+	if (nickname.empty() || nickname.size() > 9)//chaine non vide => min 1 max 9 (rfc2812)
+		return (false);
+	if (nickname.find_first_not_of(allowedChar) != std::string::npos)
+		return (false);
+	if (nickname.find_first_of("0123456789-" == 0))//nickname[0] != 0123456789-#: (# et : ne sont de toutes façons pas autorises)
+		return (false);
+	return (true);
+}
 
 void CommandHandler::handleJOIN(Server &server, Client *c, const Message &msg)
 {
@@ -184,7 +216,7 @@ void CommandHandler::handleJOIN(Server &server, Client *c, const Message &msg)
 	if (msg.params.size() > 1)
 		lst_key = msg.params[1];
 	//si msg->param[0] = "0" 
-	if (lst_chan == "0")
+	if (lst_chan == "0")//JOIN 0 == PART chan1,chan2...
 	{
 		;//=> On appelle Part pour chaque channel
 		return;
@@ -222,7 +254,7 @@ void CommandHandler::handleJOIN(Server &server, Client *c, const Message &msg)
 		}
 		else if (chan_ptr == NULL)//idem avec "no_error = checksJoinIfChannelDoesNotExists(c, chan_ptr, key);" ? A voir avec les messages d'erreur ?
 		{
-			if (!isValidChannelName(server, chan))//(commence par # on ne gere pas les autres vu que notre serveur est uniquement local) + /!\insensible a la casse + n'existe pas deja !
+			if (!isValidChannelName(chan))
 				;//ERR_NOSUCHCHANNEL (403)
 			else
 			{

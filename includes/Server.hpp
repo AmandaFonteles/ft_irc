@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: afontele <afontele@student.42.fr>          +#+  +:+       +#+        */
+/*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 21:54:11 by afontele          #+#    #+#             */
-/*   Updated: 2026/05/09 12:16:11 by afontele         ###   ########.fr       */
+/*   Updated: 2026/05/10 17:02:28 by aibonade         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,10 +62,11 @@ public:
 	void	sendMessage(int clientFd);
 
 	//Channel methods
-	Channel	*get_channel(std::string const name);//retourne NULL si pas trouve
-	Channel	*createChannel(std::string const name);//retourne NULL si erreur ?
-	void	deleteChannel(Channel *chan);
-	Client	*get_client(std::string const nickname);//retourne NULL si pas trouve
+	Channel		*get_channel(std::string const name);//retourne NULL si pas trouve
+	Channel		*createChannel(std::string const name);//retourne NULL si erreur ?
+	void		deleteChannel(Channel *chan);
+	Client		*get_client(std::string const nickname);//retourne NULL si pas trouve
+	std::string	lowerName(std::string const name);
 };
 
 #endif
