@@ -6,7 +6,7 @@
 /*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/05 15:55:21 by dnayel            #+#    #+#             */
-/*   Updated: 2026/05/10 19:47:57 by aibonade         ###   ########.fr       */
+/*   Updated: 2026/05/11 16:59:37 by aibonade         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -223,18 +223,34 @@ void CommandHandler::handleJOIN(Server &server, Client *c, const Message &msg)
 	}
 
 	//boucler jusqu'a ce que msg.params[0] (chan) soit vide
-	while (!lst_chan.empty())
+	while (!lst_chan.empty())//pos != std::string::npos
 	{
 	//	- recuperer le chan
 		pos = lst_chan.find(",", 0);
-		chan = lst_chan.substr(0, pos);
-		lst_chan.erase(0, pos + 1);
+		if (pos != std::string::npos)
+		{
+			chan = lst_chan.substr(0, pos);
+			lst_chan.erase(0, pos + 1);
+		}
+		else
+		{
+			chan = lst_chan;
+			lst_chan.clear();
+		}
 	//	- recuperer la key si ya sinon mettre a ""
 		if (!lst_key.empty())
 		{
 			pos = lst_key.find(",", 0);
-			key = lst_key.substr(0, pos);
-			lst_key.erase(0, pos + 1);
+			if (pos != std::string::npos)
+			{
+				key = lst_key.substr(0, pos);
+				lst_key.erase(0, pos + 1);
+			}
+			else
+			{
+				key = lst_key;
+				lst_key.clear();
+			}
 		}
 		else
 			key = "";
@@ -280,5 +296,80 @@ void CommandHandler::handleJOIN(Server &server, Client *c, const Message &msg)
 	//Questions : 
 	//Si + de clefs que de channels => clefs supplementaires ignorees
 	//Comment gérer les messages d'erreur non bloquants => bool no_error
+	return;
+}
+
+void	CommandHandler::handlePRIVMSG(Server &server, Client *c, const Message &msg)
+{
+	//Le check du client non null à faire avant non ? 
+	int						t = 0;//  0 = erreur, 1 = chan, 2 = client, 3 = deja vu
+	std::string				lst_target;
+	std::string				target;
+	std::set<std::string>	old_targets;
+	size_t					pos;
+	Channel					*chan_target;
+	Client					*user_target;
+
+	if	(msg.params.empty() || msg.params[0].empty())
+	{
+		;//ERR_NORECIPIENT(411)
+		return;
+	}
+	if (msg.params.size() < 2 || msg.params[1].empty())
+	{
+		;//ERR_NOTEXTTOSEND(412)
+		return;
+	}
+	
+	//checker les param (au moins 2) et si 2, !param[1].empty()
+	lst_target = msg.params[0];
+	while (pos != std::string::npos)
+	{
+	//	- recuperer la target
+		pos = lst_target.find(",", 0);
+		target = lst_target.substr(0, pos);///!\npos
+		lst_target.erase(0, pos + 1);
+		//Definir la target avec t
+		if (old_targets.find(target) != old_targets.end())
+			t = 3;
+		else if (isValidChannelName(target))
+			t = 1;
+		else if (isValidClientName(target))
+			t = 2;
+		switch (t)
+		{
+		case 1:
+			chan_target = server.get_channel(target);
+			if (chan_target == NULL)
+			{
+				;//ERR_NOSUCHNICK (401)/ERR_NOSUCHCHANNEL(403) => perso je prefere 403
+				break;
+			}
+			if (!isMemberChannel(c, chan_target))
+			{
+				;//ERR_CANNOTSENDTOCHAN (404)
+				break;
+			}
+			;//envoyer param[1] a tous les membres du chan si pas dans old_target + les ajouter dans old_targets
+			old_targets.insert(target);
+			break;
+		case 2:
+			user_target = server.get_client(target);
+			if (user_target == NULL || !user_target->get_registered())
+			{
+				;//ERR_NOSUCHNICK (401)
+				break;
+			}
+			;//envoyer le param[1] a la target
+			old_targets.insert(target);
+			break;
+		case 3:
+			break;
+		default:
+			;//ERR_NOSUCHNICK(401)
+			break;
+		}
+		t = 0;
+	}
 	return;
 }

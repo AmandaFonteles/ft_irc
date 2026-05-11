@@ -6,7 +6,7 @@
 /*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/05 15:55:06 by dnayel            #+#    #+#             */
-/*   Updated: 2026/05/10 19:39:19 by aibonade         ###   ########.fr       */
+/*   Updated: 2026/05/11 14:28:56 by aibonade         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,7 +44,7 @@ class CommandHandler
 		bool	isValidClientName(std::string const &name);
 	//Commandes//Le client ici du coup c'est bien celui qui a appele la commande 
 		void	handleJOIN(Server &server, Client *c, const Message &msg);//ici on appelle addMember & addChannel !
-		//void handlePRIVMSG(Server &server, Client *c, const Message &msg);
+		void	handlePRIVMSG(Server &server, Client *c, const Message &msg);
 		//void handleKICK(Server &server, Client *c, const Message &msg);
 		//void handleINVITE(Server &server, Client *c, const Message &msg);
 		//void handleTOPIC(Server &server, Client *c, const Message &msg);
