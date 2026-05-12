@@ -6,7 +6,7 @@
 /*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/28 12:55:34 by aibonade          #+#    #+#             */
-/*   Updated: 2026/05/10 19:25:04 by aibonade         ###   ########.fr       */
+/*   Updated: 2026/05/12 16:29:03 by aibonade         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,8 +56,7 @@ public:
 	std::string			get_username() const;
 	bool				get_passOk() const;
 	bool				get_registered() const;
-	// std::set<Channel>	get_channels();//get ou print ? ou string ?
-	// Channel				get_channel(int i);//ou nom du chanel ?
+	// std::set<Channel *>	get_channels();//get ou print ? ou string ?
 	std::string			&get_bufferOut(); 
 
 //other methods

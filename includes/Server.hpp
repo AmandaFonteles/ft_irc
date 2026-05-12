@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: afontele <afontele@student.42.fr>          +#+  +:+       +#+        */
+/*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 21:54:11 by afontele          #+#    #+#             */
-/*   Updated: 2026/05/12 10:46:19 by afontele         ###   ########.fr       */
+/*   Updated: 2026/05/12 22:36:36 by aibonade         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -63,11 +63,12 @@ public:
 	void	removeClientFromAllChannels(int clientFd);
 
 	//Channel methods
-	Channel		*get_channel(std::string const name);//retourne NULL si pas trouve
-	Channel		*createChannel(std::string const name);//retourne NULL si erreur ?
-	void		deleteChannel(Channel *chan);
-	Client		*get_client(std::string const nickname);//retourne NULL si pas trouve
-	std::string	lowerName(std::string const name);
+	Channel				*get_channel(std::string const name);//retourne NULL si pas trouve
+	Channel				*createChannel(std::string const name);//retourne NULL si erreur ?
+	void				deleteChannel(Channel *chan);
+	Client				*get_client(std::string const nickname);//retourne NULL si pas trouve
+	static std::string	lowerName(std::string const name);
+	void				removeClientFromChannel(Client *c, Channel *chan);
 };
 
 #endif

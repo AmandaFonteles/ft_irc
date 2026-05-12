@@ -6,7 +6,7 @@
 /*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/28 14:54:05 by aibonade          #+#    #+#             */
-/*   Updated: 2026/05/08 16:33:29 by aibonade         ###   ########.fr       */
+/*   Updated: 2026/05/12 17:05:18 by aibonade         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -79,7 +79,11 @@ std::string	Channel::get_topic() const
 	return (this->_name);
 }
 
-// std::set<Client &>	Channel::get_members() const;//set ? string ? print ? //TO DO
+std::set<Client *>	Channel::get_members() const
+{
+	std::set<Client *> cpy(this->_members);
+	return (cpy);
+}
 // std::set<Client const *>	Channel::get_operators() const;//set ? string ? print ? //TO DO
 
 size_t	Channel::get_limit() const

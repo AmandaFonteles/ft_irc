@@ -6,7 +6,7 @@
 /*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/09 10:40:24 by aibonade          #+#    #+#             */
-/*   Updated: 2026/05/10 17:09:25 by aibonade         ###   ########.fr       */
+/*   Updated: 2026/05/12 22:36:17 by aibonade         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,14 +42,24 @@ void	Server::deleteChannel(Channel *chan)
 	return;
 }
 
+void	Server::removeClientFromChannel(Client *c, Channel *chan)
+{
+	chan->removeOperator(c);
+	chan->removeMember(c);
+	c->removeChannel(chan);
+	if (chan->nbMembers() == 0)
+		deleteChannel(chan);
+}
+
 Client	*Server::get_client(std::string const nickname)
 {
-	std::map<int, Client *>::iterator it;
+	std::map<int, Client *>::iterator	it;
+	std::string							nickname_lower = Server::lowerName(nickname);
 
 	it = _clients.begin();
 	while (it != _clients.end())
 	{
-		if (it->second->get_nickname() == nickname)
+		if (Server::lowerName(it->second->get_nickname()) == nickname_lower)
 			return (it->second);
 		it++;
 	}
@@ -64,7 +74,7 @@ std::string	Server::lowerName(std::string const name)
 	i = 0;
 	while (str[i])
 	{
-		str[i] = std::toupper(str[i]);
+		str[i] = std::tolower(str[i]);
 		i++;
 	}
 std::cout << "[DEBUG] name (" << name << ") normalized = " << str << std::endl;//On l'enlevera en temps voulu, laisse la collee au bord :) J'aimerais checker le # notamment 

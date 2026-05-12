@@ -6,7 +6,7 @@
 /*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/28 14:55:46 by aibonade          #+#    #+#             */
-/*   Updated: 2026/05/08 19:06:11 by aibonade         ###   ########.fr       */
+/*   Updated: 2026/05/12 16:29:15 by aibonade         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -109,6 +109,11 @@ std::string	&Client::get_bufferOut()
 {
 	return (_bufferOut);
 }
+
+// std::set<Channel *>	const Client::get_channels()
+// {
+// 	return (_channels);
+// }
 
 /********OTHER METHODS********/
 // Client	&Client::operator=(Client const &to_affect)//est-ce qu'on copie les buffers, passOK et channels et fd ? //TO DO

@@ -6,7 +6,7 @@
 /*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/28 12:55:22 by aibonade          #+#    #+#             */
-/*   Updated: 2026/05/08 16:32:37 by aibonade         ###   ########.fr       */
+/*   Updated: 2026/05/12 16:42:53 by aibonade         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,7 +50,7 @@ public:
 //getters
 	std::string					get_name() const;
 	std::string					get_topic() const;
-	// std::set<Client &>			get_members() const;//set ? string ? print ?
+	std::set<Client *>			get_members() const;//set ? string ? print ?
 	// std::set<Client const &>	get_operators() const;//set ? string ? print ?
 	size_t						get_limit() const;
 	bool						get_inviteOnly() const;

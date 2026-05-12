@@ -6,7 +6,7 @@
 /*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/05 15:55:21 by dnayel            #+#    #+#             */
-/*   Updated: 2026/05/11 17:20:40 by aibonade         ###   ########.fr       */
+/*   Updated: 2026/05/12 22:52:43 by aibonade         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -197,10 +197,9 @@ std::cout << "[DEBUG] allowChar string = \"" << allowedChar << "\""<< std::endl;
 
 void CommandHandler::handleJOIN(Server &server, Client *c, const Message &msg)
 {
-	//std::vector<std::string>	params;
-	//variables : 
-	//	- std::string	key_tmp;
-	//	- std::string	chan_tmp;
+//variables : 
+//	- std::string	key_tmp;
+//	- std::string	chan_tmp;
 	std::string	chan;
 	std::string	key;
 	std::string lst_chan;
@@ -209,23 +208,26 @@ void CommandHandler::handleJOIN(Server &server, Client *c, const Message &msg)
 	Channel		*chan_ptr;
 	bool		no_error = false;
 
-	//checker que j'ai au moins 1 param non vide
+//checker que j'ai au moins 1 param non vide
 	if (!msg.params.size() || msg.params[0].empty())
+	{
 		;//ERR_NEEDMOREPARAMS(461)
+		return;
+	}
 	lst_chan = msg.params[0];
 	if (msg.params.size() > 1)
 		lst_key = msg.params[1];
-	//si msg->param[0] = "0" 
+//si msg->param[0] = "0" 
 	if (lst_chan == "0")//JOIN 0 == PART chan1,chan2...
 	{
 		;//=> On appelle Part pour chaque channel
 		return;
 	}
 
-	//boucler jusqu'a ce que msg.params[0] (chan) soit vide
+//boucler jusqu'a ce que msg.params[0] (chan) soit vide
 	while (!lst_chan.empty())//pos != std::string::npos
 	{
-	//	- recuperer le chan
+//	- recuperer le chan
 		pos = lst_chan.find(",", 0);
 		if (pos != std::string::npos)
 		{
@@ -237,7 +239,7 @@ void CommandHandler::handleJOIN(Server &server, Client *c, const Message &msg)
 			chan = lst_chan;
 			lst_chan.clear();
 		}
-	//	- recuperer la key si ya sinon mettre a ""
+//	- recuperer la key si ya sinon mettre a ""
 		if (!lst_key.empty())
 		{
 			pos = lst_key.find(",", 0);
@@ -255,7 +257,7 @@ void CommandHandler::handleJOIN(Server &server, Client *c, const Message &msg)
 		else
 			key = "";
 
-	//	- Channel exist
+//	- Channel exist
 		chan_ptr = server.get_channel(chan);
 		if (chan_ptr && !isMemberChannel(c, chan_ptr))//mettre ce qu'il y a dedans dans un bloc qui retourne true si reussi en mode "no_error = checksJoinIfChannelExists(c, chan_ptr, key);" A voir avec les messages d'erreur ? 
 		{
@@ -281,34 +283,36 @@ void CommandHandler::handleJOIN(Server &server, Client *c, const Message &msg)
 		}
 		if (no_error)
 		{
-	//	- Si tout s'est bien passe jusqu'ici c devient membre
+//	- Si tout s'est bien passe jusqu'ici c devient membre
 			chan_ptr->addMember(c);
 			c->addChannel(chan_ptr);
 	//	- Envoyer message a tous les membres (meme c) ":pouet!user@localhost JOIN #Tagada\r\n" avec pouet le nouveau membre et #Tagada le channel
 	//	- Envoyer messages a c :
-	//		- Le topic du serveur RPL_TOPIC (332) => TOPIC commande ? (rechecker)
+	//		- Le topic du serveur RPL_TOPIC (332) => TOPIC commande ? (rechecker):server 332 :On aime les fraises\r\n
 	//		- RPL_NAMREPLY (353) => NAME commande
 	//		- RPL_ENDOFNAMES (366) => idem
 			no_error = false;
 		}
 	}
 
-	//Questions : 
-	//Si + de clefs que de channels => clefs supplementaires ignorees
-	//Comment gérer les messages d'erreur non bloquants => bool no_error
+//Questions : 
+//Si + de clefs que de channels => clefs supplementaires ignorees
+//Comment gérer les messages d'erreur non bloquants => bool no_error
 	return;
 }
 
 void	CommandHandler::handlePRIVMSG(Server &server, Client *c, const Message &msg)
 {
 	//Le check du client non null à faire avant non ? 
-	int						t = 0;//  0 = erreur, 1 = chan, 2 = client, 3 = deja vu
-	std::string				lst_target;
-	std::string				target;
-	std::set<std::string>	old_targets;
-	size_t					pos;
-	Channel					*chan_target;
-	Client					*user_target;
+	int								t = 0;//  0 = erreur, 1 = chan, 2 = client, 3 = deja vu
+	std::string						lst_target;
+	std::string						target;
+	std::set<std::string>			old_targets;
+	size_t							pos = 0;
+	Channel							*chan_target;
+	std::set<Client *>				chan_members;
+	std::set<Client *>::iterator	it;
+	Client							*user_target;
 
 	if	(msg.params.empty() || msg.params[0].empty())
 	{
@@ -321,16 +325,16 @@ void	CommandHandler::handlePRIVMSG(Server &server, Client *c, const Message &msg
 		return;
 	}
 	
-	//checker les param (au moins 2) et si 2, !param[1].empty()
+//checker les param (au moins 2) et si 2, !param[1].empty()
 	lst_target = msg.params[0];
-	while (pos != std::string::npos)
+	while (!lst_target.empty() && pos != std::string::npos)
 	{
-	//	- recuperer la target
+//	- recuperer la target
 		pos = lst_target.find(",", 0);
 		target = lst_target.substr(0, pos);///!\npos
 		lst_target.erase(0, pos + 1);
-		//Definir la target avec t
-		if (old_targets.find(target) != old_targets.end())
+//Definir la target avec t
+		if (old_targets.find(Server::lowerName(target)) != old_targets.end())
 			t = 3;
 		else if (isValidChannelName(target))
 			t = 1;
@@ -350,8 +354,20 @@ void	CommandHandler::handlePRIVMSG(Server &server, Client *c, const Message &msg
 				;//ERR_CANNOTSENDTOCHAN (404)
 				break;
 			}
-			;//envoyer param[1] a tous les membres du chan si pas dans old_target + les ajouter dans old_targets
-			old_targets.insert(target);
+
+			old_targets.insert(Server::lowerName(target));
+			chan_members = chan_target->get_members();
+			it = chan_members.begin();
+			while (it != chan_members.end())
+			{
+				user_target = *it;
+				if (old_targets.find(Server::lowerName(user_target->get_nickname())) == old_targets.end() && user_target != c)
+				{
+					;//envoyer le param[1] a la target
+					old_targets.insert(Server::lowerName(user_target->get_nickname()));
+				}
+				it++;
+			}
 			break;
 		case 2:
 			user_target = server.get_client(target);
@@ -361,7 +377,7 @@ void	CommandHandler::handlePRIVMSG(Server &server, Client *c, const Message &msg
 				break;
 			}
 			;//envoyer le param[1] a la target
-			old_targets.insert(target);
+			old_targets.insert(Server::lowerName(target));
 			break;
 		case 3:
 			break;
@@ -372,4 +388,51 @@ void	CommandHandler::handlePRIVMSG(Server &server, Client *c, const Message &msg
 		t = 0;
 	}
 	return;
+}
+
+void	CommandHandler::handleKICK(Server &server, Client *c, const Message &msg)//historiquement on pouvait avoir #chan1,#chan2 user1,user2 mais ce n'est plus tres usite ajd, du coup je ne l'ai pas implemente mais a voir si vous preferez que je le fasse aussi au cas ou
+{
+	std::string	reason = "has been kicked from channel";//si pas de raison precisee => mettre un message par defaut (au debut ? en mode std::string reason = "has been kicked from channel")
+	Channel		*chan;
+	size_t		pos = 0;
+	Client		*user_target;
+	std::string	lst_members;
+	std::string	target;
+	std::string	chan_name;
+
+//Params necessaires (#chan list_user & raison(opt))
+	if (msg.params.empty() || msg.params.size() < 2)
+	{
+		;//ERR_NEEDMOREPARAMS(461)
+		return;
+	}
+	chan_name = msg.params[0];
+	lst_members = msg.params[1];
+	if (msg.params.size() > 2)
+		reason = msg.params[2];
+//channel existant 
+	chan = server.get_channel(chan_name);
+	if (!chan)
+	{
+		;//ERR_NOSUCHCHANNEL (403)
+		return;
+	}
+	while (!lst_members.empty() && pos != std::string::npos)
+	{
+		pos = lst_members.find(",", 0);
+		target = lst_members.substr(0, pos);///!\npos
+		lst_members.erase(0, pos + 1);
+		user_target = server.get_client(target);
+		if (!isMemberChannel(c, chan))//checker avec la normalisation du client name
+			;//ERR_NOTONCHANNEL (442)
+		else if (!chan->isOperator(c))
+			;//ERR_CHANOPRIVSNEEDED (482)
+		else if (!user_target || !user_target->get_registered() || !isMemberChannel(user_target, chan))
+			;//ERR_USERNOTINCHANNEL (441)
+		else
+		{
+			;//message de kick
+			server.removeClientFromChannel(user_target, chan);
+		}
+	}
 }
