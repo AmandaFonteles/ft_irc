@@ -6,7 +6,7 @@
 /*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/05 15:55:21 by dnayel            #+#    #+#             */
-/*   Updated: 2026/05/11 16:59:37 by aibonade         ###   ########.fr       */
+/*   Updated: 2026/05/11 17:20:40 by aibonade         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -286,7 +286,7 @@ void CommandHandler::handleJOIN(Server &server, Client *c, const Message &msg)
 			c->addChannel(chan_ptr);
 	//	- Envoyer message a tous les membres (meme c) ":pouet!user@localhost JOIN #Tagada\r\n" avec pouet le nouveau membre et #Tagada le channel
 	//	- Envoyer messages a c :
-	//		- Le topic du serveur RPL_TOPIC (332)
+	//		- Le topic du serveur RPL_TOPIC (332) => TOPIC commande ? (rechecker)
 	//		- RPL_NAMREPLY (353) => NAME commande
 	//		- RPL_ENDOFNAMES (366) => idem
 			no_error = false;
