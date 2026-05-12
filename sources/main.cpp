@@ -6,22 +6,28 @@
 /*   By: afontele <afontele@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/30 15:09:52 by afontele          #+#    #+#             */
-/*   Updated: 2026/05/05 18:07:26 by afontele         ###   ########.fr       */
+/*   Updated: 2026/05/12 19:21:18 by afontele         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <iostream>
+#include <csignal>
 #include "Server.hpp"
 
 int	main(int ac, char **av) {
+	// 1. Parameter check
 	if (ac != 3) {
 		std::cerr << "Usage: ./ircserv <port> <password>" << std::endl;
 		return (1);
 	}
+	// 2. Signal setting
+	signal(SIGINT, Server::signalHandler);
+	signal(SIGQUIT, Server::signalHandler);
+	signal(SIGTERM, Server::signalHandler);
 	
 	try
 	{
-		// 1. Create the Server object
+		// 3. Create the Server object
 		Server	ircServer(av[1], av[2]);
 
 		if (!ircServer.ServerInit()) {

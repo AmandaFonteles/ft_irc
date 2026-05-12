@@ -6,11 +6,14 @@
 /*   By: afontele <afontele@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 21:54:23 by afontele          #+#    #+#             */
-/*   Updated: 2026/05/12 10:50:00 by afontele         ###   ########.fr       */
+/*   Updated: 2026/05/12 19:31:14 by afontele         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/Server.hpp"
+
+//Set static boolean to true outside the constructor
+bool	Server::_running = true;
 
 // !!! FOR ERROR: use errno on cerr messages?
 Server::Server(const std::string &port, const std::string &password) : _password(password), _serverSocket(-1) {
@@ -53,6 +56,16 @@ Server::~Server() {
 	_channels.clear();
 	
 	std::cout << "[DEBUG] Server shutdown." << std::endl;
+}
+
+//Signal Handler
+void	Server::signalHandler(int sig) {
+	(void)sig;
+	
+	_running = false;
+
+	//TEST DEBUG - erase it later
+	write(STDOUT_FILENO, "\b\b[DEBUG] Signal received. Shutting down...\n", 44);
 }
 
 //Network Setup
@@ -129,7 +142,7 @@ bool	Server::ServerInit() {
 //Event loop
 // ! Check how to handle errors after
 void	Server::ServerRun() {
-	while (true) {
+	while (_running) {
 		// 1. Call poll() on the _pollFds vector
 		// - this infinite loop + poll() is used to "put the CPU to sleep" til there's data to read;
 		// - A vector of pollfds struct is passed to poll(), since a vector stores all its elements in one continuous block of memory, exactly like a C-array
@@ -146,7 +159,7 @@ void	Server::ServerRun() {
 		
         // 2. Loop through _pollFds to find which fd triggered an event
 		// - Since poll() returns how many fds flagged and not which ones, this loop is needed
-		for (size_t i = _pollFds.size() - 1; i >= 0; i--) {
+		for (int i = static_cast<int>(_pollFds.size() - 1); i >= 0; i--) {
 			// - If _pollFds[i].revents = 0, nothing happened on this socket.
 			// - revents is a bitmap(each bit works as a checkbox), we use bitwise AND to check that the POLLIN box is checked
 			// - The bitwise operation is necessary because the same revents can store POLLIN and other flags, and we want to treat every socket that has POLLIN in it.
@@ -231,6 +244,12 @@ void	Server::receiveClientData(int clientFd) {
 
 	// 3. Include received data to _bufferIn
 	else {
+		// - Safety check to see if client exists
+		if (_clients.find(clientFd) == _clients.end()) {
+			std::cerr << "Received data from unkwon client." << std::endl;
+			return ;
+		}
+		
 		std::string	msg = buff;
 		std::cout << "[DEBUG] Message received: " << msg << std::endl;
 		_clients[clientFd]->set_bufferIn(msg);
@@ -284,6 +303,11 @@ void	Server::switchPollOut(int clientFd) {
 }
 
 void	Server::sendMessage(int clientFd) {
+	// - Safety check
+	if (_clients.find(clientFd) == _clients.end()) {
+		std::cerr << "[DEBUG]Trying to send message to unknown client" << std::endl;
+		return ;
+	}
 	std::string	&msg = _clients[clientFd]->get_bufferOut();
 	
 	// ? Do we hve something to handle if bufferOut is empty? It shouldn't happen
@@ -325,6 +349,11 @@ void	Server::sendMessage(int clientFd) {
 // ? Check if we need to send messages about that to other clients
 // ? Metre sur Server_channel
 void	Server::removeClientFromAllChannels(int clientFd) {
+	// - Safety check
+	if (_clients.find(clientFd) == _clients.end()) {
+		std::cerr << "[DEBUG]Couldn't find client FD: " << clientFd << std::endl;
+		return ;
+	}
 	// 1. Loop through Channel map to remove the client from it
 	// - Increment the iterator when calling erase. Erase destroy it, so if we use it after calling erase, the program will try to acess it that no longer exists
 	std::map<std::string, Channel *>::iterator it = _channels.begin();

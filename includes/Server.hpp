@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
+/*   By: afontele <afontele@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 21:54:11 by afontele          #+#    #+#             */
-/*   Updated: 2026/05/12 22:36:36 by aibonade         ###   ########.fr       */
+/*   Updated: 2026/05/14 15:15:58 by afontele         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,6 +22,7 @@
 # include <sys/socket.h> //for AF_INET and bind
 # include <sys/types.h>
 # include <cerrno>
+# include <csignal>
 # include <unistd.h> //for close
 # include <fcntl.h>
 # include <netinet/in.h> //for struct sockaddr_in, IPPROTO_TCP
@@ -30,8 +31,6 @@
 # include "Channel.hpp"
 # include "Client.hpp"
 # include "CommandHandler.hpp"
-
-//we'll need signal and errno
 
 class	Server {
 private:
@@ -42,6 +41,7 @@ private:
 	std::vector<struct pollfd>	_pollFds; //vector of pollfd structs necessary for poll()
 	std::map<std::string, Channel *> _channels; //map of pointers
 	std::map<int, Client *>	_clients;
+	static bool			_running;
 	
 	Server();
 public:	
@@ -50,6 +50,9 @@ public:
 	// Server	&operator=(Server const &other);
 	~Server();
 
+	//Signal method
+	static void	signalHandler(int sig);
+	
 	//Server methods
 	bool	ServerInit();
 	void	ServerRun();
