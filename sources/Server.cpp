@@ -6,7 +6,7 @@
 /*   By: afontele <afontele@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 21:54:23 by afontele          #+#    #+#             */
-/*   Updated: 2026/05/09 17:38:36 by afontele         ###   ########.fr       */
+/*   Updated: 2026/05/12 10:14:48 by afontele         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,13 +39,18 @@ Server::Server(const std::string &port, const std::string &password) : _password
 Server::~Server() {
 	// 1. close server socket
 	close(_serverSocket);
-	// 2. loop to delete _clients and _channels
+	
+	// 2. loops to delete _clients and _channels
 	for (std::map<int,Client *>::iterator it = _clients.begin(); it != _clients.end(); it++) {
 		close(it->first);
 		delete it->second;
 	}
+	for (std::map<std::string, Channel *>::iterator it = _channels.begin(); it != _channels.end(); it++)
+		delete it->second;
+		
 	// 3. Empty maps _clients and _channels
 	_clients.clear();
+	_channels.clear();
 	
 	std::cout << "[DEBUG] Server shutdown." << std::endl;
 }
@@ -239,23 +244,31 @@ void	Server::receiveClientData(int clientFd) {
 
 //Disconnect a client
 void	Server::cleanClosure(int clientFd) {
-	std::cout << "Client FD " << clientFd << " disconnected." << std::endl;
-	// 1. Remove client from channels
-	// _clients[clientFd]->removeAllChannel();
-	// 2. Close the socket
+	// 1. Safety check
+	if (_clients.find(clientFd) == _clients.end())
+		return ;
+		
+	// 2. Remove client from _channels
+	removeClientFromAllChannels(clientFd);
+
+	// 3. Remove channels from client (? do we need that? We will delete the client after anyway)
+	_clients[clientFd]->removeAllChannel();
+	
+	// 4. Close the socket
 	close(clientFd);
 	
-	// 2. Delete from map and erase its key
+	// 5. Delete from map and erase its key
 	delete _clients[clientFd];
 	_clients.erase(clientFd);
 	
-	//3. Remove from _pollFds
+	//6. Remove from _pollFds
 	for (size_t i = 0; i < _pollFds.size(); i++) {
 		if (_pollFds[i].fd == clientFd) {
 			_pollFds.erase(_pollFds.begin() + i); //use vector method and pass the iterator of the position
 			break ;
 		}
 	}
+	std::cout << "Client FD " << clientFd << " disconnected." << std::endl;
 }
 
 // - This function exist to tell the server we have a message to send to a client.
@@ -305,5 +318,27 @@ void	Server::sendMessage(int clientFd) {
 				break ;
 			}
 		}
+	}
+}
+
+//Delete client from all channels
+// ? Check if we need to send messages about that to other clients
+// ? Metre sur Server_channel
+void	Server::removeClientFromAllChannels(int clientFd) {
+	// 1. Loop through Channel map to remove the client from it
+	// - Increment the iterator when calling erase. Erase destroy it, so if we use it after calling erase, the program will try to acess it that no longer exists
+	std::map<std::string, Channel *>::iterator it = _channels.begin();
+	while (it != _channels.end()) {
+		it->second->removeMember(_clients[clientFd]);
+		it->second->removeOperator(_clients[clientFd]);
+
+		// 3. Check if channel is empty
+		if (it->second->nbMembers() == 0) {
+			std::cout << "[DEBUG] Channel " << it->first << "is empty. Deleting it" << std::endl;
+			delete it->second;
+			_channels.erase(it++);
+		}
+		else
+			it++;
 	}
 }

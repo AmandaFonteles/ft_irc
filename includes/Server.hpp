@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
+/*   By: afontele <afontele@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 21:54:11 by afontele          #+#    #+#             */
-/*   Updated: 2026/05/10 17:02:28 by aibonade         ###   ########.fr       */
+/*   Updated: 2026/05/12 10:46:19 by afontele         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -60,6 +60,7 @@ public:
 	void	cleanClosure(int clientFd);
 	void	switchPollOut(int clientFd);
 	void	sendMessage(int clientFd);
+	void	removeClientFromAllChannels(int clientFd);
 
 	//Channel methods
 	Channel		*get_channel(std::string const name);//retourne NULL si pas trouve
