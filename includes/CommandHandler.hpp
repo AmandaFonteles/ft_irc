@@ -6,7 +6,7 @@
 /*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/05 15:55:06 by dnayel            #+#    #+#             */
-/*   Updated: 2026/05/14 14:27:23 by aibonade         ###   ########.fr       */
+/*   Updated: 2026/05/14 19:34:49 by aibonade         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,15 +42,16 @@ class CommandHandler
 		Client	*checkClientExists(Server &server, std::string const &nickname);//verifier aussi que s'il existe il est bien register => NULL = client non existant/enregistre, sinon pointeur sur le client ? 
 		bool	isValidChannelName(std::string const &name);
 		bool	isValidClientName(std::string const &name);
+		void	namesReply(Server &server, Client *c, Channel *chan);//A voir s'il faut le message du JOIN aussi pour Nayel 
 	//Commandes//Le client ici du coup c'est bien celui qui a appele la commande
 		void	handleJOIN(Server &server, Client *c, const Message &msg);
 		void	handlePRIVMSG(Server &server, Client *c, const Message &msg);
 		void	handleKICK(Server &server, Client *c, const Message &msg);
-		//void	handleINVITE(Server &server, Client *c, const Message &msg);
-		//void	handleTOPIC(Server &server, Client *c, const Message &msg);
+		void	handleINVITE(Server &server, Client *c, const Message &msg);
+		void	handleTOPIC(Server &server, Client *c, const Message &msg);
 		//void	handleMODE(Server &server, Client *c, const Message &msg);
-		//void	handlePART(Server &server, Client *c, const Message &msg);//Non obg mais utile pout JOIN//Penser a suppr membre & operator & invite
-		//void	handleNAMES(Server &server, Client *c, const Message &msg);//Non obg mais utile pour JOIN
+		void	handlePART(Server &server, Client *c, const Message &msg);
+		//void	handleNAMES(Server &server, Client *c, const Message &msg);//Non obg mais utile pour JOIN => j'ai plutot fait un helper, on peut passer par lui si finalement on decide de coder la commande NAMES
 };
 
 #endif

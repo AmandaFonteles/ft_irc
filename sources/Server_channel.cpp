@@ -6,7 +6,7 @@
 /*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/09 10:40:24 by aibonade          #+#    #+#             */
-/*   Updated: 2026/05/14 14:35:15 by aibonade         ###   ########.fr       */
+/*   Updated: 2026/05/14 18:46:27 by aibonade         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,6 +46,7 @@ void	Server::removeClientFromChannel(Client *c, Channel *chan)
 {
 	chan->removeOperator(c);
 	chan->removeMember(c);
+	chan->removeInvite(c);
 	c->removeChannel(chan);
 	if (chan->nbMembers() == 0)
 		deleteChannel(chan);

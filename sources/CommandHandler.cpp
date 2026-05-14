@@ -6,7 +6,7 @@
 /*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/05 15:55:21 by dnayel            #+#    #+#             */
-/*   Updated: 2026/05/12 22:52:43 by aibonade         ###   ########.fr       */
+/*   Updated: 2026/05/14 19:59:34 by aibonade         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -220,7 +220,8 @@ void CommandHandler::handleJOIN(Server &server, Client *c, const Message &msg)
 //si msg->param[0] = "0" 
 	if (lst_chan == "0")//JOIN 0 == PART chan1,chan2...
 	{
-		;//=> On appelle Part pour chaque channel
+		;// => on cree un message part avec prefix = ???(celui du msg actuel ?), command = "PART", params = c->get_channels() (donc sous forme de string), trailing ???, has trailing ????
+		;//=> On appelle Part avec le nouveau message
 		return;
 	}
 
@@ -229,30 +230,20 @@ void CommandHandler::handleJOIN(Server &server, Client *c, const Message &msg)
 	{
 //	- recuperer le chan
 		pos = lst_chan.find(",", 0);
-		if (pos != std::string::npos)
-		{
 			chan = lst_chan.substr(0, pos);
+		if (pos != std::string::npos)
 			lst_chan.erase(0, pos + 1);
-		}
 		else
-		{
-			chan = lst_chan;
 			lst_chan.clear();
-		}
 //	- recuperer la key si ya sinon mettre a ""
 		if (!lst_key.empty())
 		{
 			pos = lst_key.find(",", 0);
+			key = lst_key.substr(0, pos);
 			if (pos != std::string::npos)
-			{
-				key = lst_key.substr(0, pos);
 				lst_key.erase(0, pos + 1);
-			}
 			else
-			{
-				key = lst_key;
 				lst_key.clear();
-			}
 		}
 		else
 			key = "";
@@ -285,12 +276,12 @@ void CommandHandler::handleJOIN(Server &server, Client *c, const Message &msg)
 		{
 //	- Si tout s'est bien passe jusqu'ici c devient membre
 			chan_ptr->addMember(c);
+			chan_ptr->removeInvite(c);
 			c->addChannel(chan_ptr);
 	//	- Envoyer message a tous les membres (meme c) ":pouet!user@localhost JOIN #Tagada\r\n" avec pouet le nouveau membre et #Tagada le channel
 	//	- Envoyer messages a c :
-	//		- Le topic du serveur RPL_TOPIC (332) => TOPIC commande ? (rechecker):server 332 :On aime les fraises\r\n
-	//		- RPL_NAMREPLY (353) => NAME commande
-	//		- RPL_ENDOFNAMES (366) => idem
+	//		- si topic du serveur != "" => RPL_TOPIC (332) (en gros => ":server 332 :On aime les fraises\r\n")
+			namesReply(server, c, chan_ptr);//ici on a RPL_NAMREPLY (353) & RPL_ENDOFNAMES (366) => idem, on a juste besoin de les renvoyer en numeric comme pour TOPIC
 			no_error = false;
 		}
 	}
@@ -327,12 +318,15 @@ void	CommandHandler::handlePRIVMSG(Server &server, Client *c, const Message &msg
 	
 //checker les param (au moins 2) et si 2, !param[1].empty()
 	lst_target = msg.params[0];
-	while (!lst_target.empty() && pos != std::string::npos)
+	while (!lst_target.empty() && pos != std::string::npos)//gerder la condition pos ?
 	{
 //	- recuperer la target
 		pos = lst_target.find(",", 0);
-		target = lst_target.substr(0, pos);///!\npos
-		lst_target.erase(0, pos + 1);
+		target = lst_target.substr(0, pos);
+		if (pos != std::string::npos)
+			lst_target.erase(0, pos + 1);
+		else
+			lst_target.clear();;
 //Definir la target avec t
 		if (old_targets.find(Server::lowerName(target)) != old_targets.end())
 			t = 3;
@@ -392,7 +386,7 @@ void	CommandHandler::handlePRIVMSG(Server &server, Client *c, const Message &msg
 
 void	CommandHandler::handleKICK(Server &server, Client *c, const Message &msg)//historiquement on pouvait avoir #chan1,#chan2 user1,user2 mais ce n'est plus tres usite ajd, du coup je ne l'ai pas implemente mais a voir si vous preferez que je le fasse aussi au cas ou
 {
-	std::string	reason = "has been kicked from channel";//si pas de raison precisee => mettre un message par defaut (au debut ? en mode std::string reason = "has been kicked from channel")
+	std::string	reason = "has been kicked from channel";//si pas de raison precisee => mettre un message par defaut (au debut ? en mode std::string reason = "has been kicked from channel") //Faut mettre les deux points devant ? (":has been kicked from channel")
 	Channel		*chan;
 	size_t		pos = 0;
 	Client		*user_target;
@@ -417,11 +411,14 @@ void	CommandHandler::handleKICK(Server &server, Client *c, const Message &msg)//
 		;//ERR_NOSUCHCHANNEL (403)
 		return;
 	}
-	while (!lst_members.empty() && pos != std::string::npos)
+	while (!lst_members.empty() && pos != std::string::npos)//virer condition pos ?
 	{
 		pos = lst_members.find(",", 0);
-		target = lst_members.substr(0, pos);///!\npos
-		lst_members.erase(0, pos + 1);
+		target = lst_members.substr(0, pos);
+		if (pos != std::string::npos)
+			lst_members.erase(0, pos + 1);
+		else
+			lst_members.clear();
 		user_target = server.get_client(target);
 		if (!isMemberChannel(c, chan))//checker avec la normalisation du client name
 			;//ERR_NOTONCHANNEL (442)
@@ -435,4 +432,132 @@ void	CommandHandler::handleKICK(Server &server, Client *c, const Message &msg)//
 			server.removeClientFromChannel(user_target, chan);
 		}
 	}
+	return;
+}
+
+void	CommandHandler::handleINVITE(Server &server, Client *c, const Message &msg)//nickname chan//ya une incoherence dans les infos de modern.ircdocs et la RFC sur l'existance des chan et client du coup j'ai tranche en demandant a ce que les deux existent bien
+{
+	Channel		*chan;
+	Client		*invited_guy;
+
+	if (msg.params.empty() || msg.params.size() < 2)
+	{
+		;//ERR_NEEDMOREPARAMS(461)
+		return;
+	}
+	invited_guy = server.get_client(msg.params[0]);
+	chan = server.get_channel(msg.params[1]);
+	if (chan == NULL)
+		;//ERR_NOSUCHCHANNEL (403)
+	else if (!isMemberChannel(c, chan))
+		;//ERR_NOTONCHANNEL (442)
+	else if (chan->get_inviteOnly() && !chan->isOperator(c))
+		;//ERR_CHANOPRIVSNEEDED (482)
+	else if (invited_guy == NULL || !invited_guy->get_registered())
+		;//ERR_NOSUCHNICK(401)
+	else if (isMemberChannel(invited_guy, chan))
+		;//ERR_USERONCHANNEL(443)
+	else
+	{
+		;//RPL_INVITING (341) a c
+		;//message d'invitation a invited_guy (:<c au bon format> INVITE <invited_guy> <chan>)
+		chan->addInvite(invited_guy);
+	}
+	return;
+}
+
+void	CommandHandler::handleTOPIC(Server &server, Client *c, const Message &msg)//chan [nouveau topic] 
+{
+	Channel		*chan;
+	std::string	topic;
+
+	if (msg.params.empty() || msg.params[0].empty())
+	{
+		;//ERR_NEEDMOREPARAMS(461)
+		return;
+	}
+	chan = server.get_channel(msg.params[0]);
+	if (chan == NULL)
+		;//ERR_NOSUCHCHANNEL (403)
+	else if (!isMemberChannel(c, chan))
+		;//ERR_NOTONCHANNEL (442)
+	else if (msg.params.size() == 1)
+	{
+		topic = chan->get_topic();
+		if (topic.empty())
+			;//RPL_NOTOPIC (331)
+		else
+			;//RPL_TOPIC (332)
+	}
+	else if (chan->get_topicProtected() && !chan->isOperator(c))
+		;//ERR_CHANOPRIVSNEEDED (482)
+	else
+	{
+		chan->set_topic(msg.params[1], c);
+		;//Topic a change (meme si on a mis le meme topic ou qu'on l'a clear) => ":<c au bon format> TOPIC <chan> :<new topic set>")
+	}
+	return;
+}
+
+void	CommandHandler::handlePART(Server &server, Client *c, const Message &msg)//Non obg mais utile pout JOIN//Penser a suppr membre & operator & invite
+{
+	size_t		pos;
+	Channel		*chan_ptr;
+	std::string lst_chan;
+	std::string	chan;
+	std::string	reason = c->get_nickname();//a voir s'il faut ajouter les ":" devant ici
+
+	if (msg.params.empty() || msg.params[0].empty())
+	{
+		;//ERR_NEEDMOREPARAMS(461)
+		return;
+	}
+	lst_chan = msg.params[0];
+	if (msg.params.size() > 1)
+		reason = msg.params[1];
+	else if (msg.hasTrailing)//checker avec Nayel comment il gere est-ce qu'il met trailing en dernier parametre ou bien il est oblige de la store separement
+		reason = msg.trailing;
+	while (!lst_chan.empty())
+	{
+		pos = lst_chan.find(",", 0);
+		chan = lst_chan.substr(0, pos);
+		if (pos != std::string::npos)
+			lst_chan.erase(0, pos + 1);
+		else
+			lst_chan.clear();
+		chan_ptr = server.get_channel(chan);
+		if (chan_ptr == NULL)
+			;//ERR_NOSUCHCHANNEL (403)
+		else if (!isMemberChannel(c, chan_ptr))
+			;//ERR_NOTONCHANNEL (442)
+		else
+		{
+			;//broadcast de la reponse de PART => "<c au bon format> <chan> :raison"
+			server.removeClientFromChannel(c, chan_ptr);
+		}
+	}
+	return;
+}
+
+void	CommandHandler::namesReply(Server &server, Client *c, Channel *chan)//A voir s'il faut le message du JOIN aussi pour Nayel 
+{
+	std::string						lst_names;
+	std::set<Client *>				members = chan->get_members();
+	std::set<Client *>::iterator	it = members.begin();
+	Client							*m;
+
+	while (it != members.end())
+	{
+		if (!lst_names.empty())
+			lst_names = lst_names + " ";
+		m = *it;
+		if (chan->isOperator(m))
+			lst_names = lst_names + "@";
+		lst_names = lst_names + m->get_nickname();
+		it++;
+	}
+	;//envoyer a c RPL_NAMREPLY (353) avec lst_names comme tail, le symbole du chan a priori ce sera tj = pour nous
+	;//envoyer a c RPL_ENDOFNAMES (366)
+
+	return;
 }
