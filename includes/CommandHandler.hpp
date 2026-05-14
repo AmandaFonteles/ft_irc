@@ -6,7 +6,7 @@
 /*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/05 15:55:06 by dnayel            #+#    #+#             */
-/*   Updated: 2026/05/12 22:32:35 by aibonade         ###   ########.fr       */
+/*   Updated: 2026/05/14 14:27:23 by aibonade         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,9 +36,9 @@ class CommandHandler
 
 	//Aileen
 	//Fonctions de test (tu peux les utiliser aussi hein, c'est juste pour que tu voies ce que j'ai ajoute)
-		bool	isMemberChannel(Client *c, Channel *chan);
-		bool	checkChannelKey(Channel const *chan, std::string const key);//si chan n'a pas de clef, renvoie true
-		bool	checkLimit(Channel const *chan);//true = limit channel non atteinte, false = limite atteinte
+		bool	isMemberChannel(Client *c, Channel *chan);//check dans client et chan si membre du chan 
+		bool	checkChannelKey(Channel const *chan, std::string const key);//si chan n'a pas de clef, renvoie true sinon renvoie le resultat de isKey (comparaison avec la clef du chan)
+		bool	checkLimit(Channel const *chan);//true = limit channel non atteinte ou pas de limit, false = limite atteinte
 		Client	*checkClientExists(Server &server, std::string const &nickname);//verifier aussi que s'il existe il est bien register => NULL = client non existant/enregistre, sinon pointeur sur le client ? 
 		bool	isValidChannelName(std::string const &name);
 		bool	isValidClientName(std::string const &name);
