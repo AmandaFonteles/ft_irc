@@ -561,3 +561,36 @@ void	CommandHandler::namesReply(Server &server, Client *c, Channel *chan)//A voi
 
 	return;
 }
+
+void	handleMODE(Server &server, Client *c, const Message &msg)//target (chan) [modestring mode arg] => ex: #Tagada +o Pouet 
+{
+	//check que le chan existe (params[0]) => ;//ERR_NOSUCHCHANNEL (403)
+	//check si params[1] n'existe pas => ;//RPL_CHANNELMODEIS (324)
+	//check si c est un operator => ;//ERR_CHANOPRIVSNEEDED (482)
+	//check si params[1] est un mode reconu (if else hein) => ;//ERR_UMODEUNKNOWNFLAG (501)
+	//si i (+ ou -) (invite-only) => D ?
+	//	- + => chan->set_inviteOnly(true);
+	//	- - => chan->set_inviteOnly(false);
+	//si t (+ ou -) (topic protected) => D ?
+	//	- + => chan->set_topicProtected(true);
+	//	- - => chan->set_topicProtected(false);
+	//si l (+ ou -) (limit) => +l 10 ou -l => C ?
+	//	- + nb => set_limit(nb) // /!\ 0 ? ou pas d'args ? = >ERR_NEEDMOREPARAMS ? a check
+	//	- - => set_limit(0);
+	//si o (operator) +o nickname -o nickname => B ?
+	//	- + member =>
+	//		- check member est dans le chan => ERR_USERNOTINCHANNEL ?
+	//		- ajoute member en operateur si pas deja et envoie message si change;ent a eu lieu
+	//	- - member =>
+	//		- check member est dans le chan => ERR_USERNOTINCHANNEL ?
+	//		- retire member des operateurs si bien l4un d4entre eux et envoie message si change;ent a eu lieu
+	//	- dans les deux cas continuer silencieusement (dc pas d'erreur ni de reponse juste on termine) sans ajouter ou retirer le status si est deja ou n'est deja pas operator
+	//k (key) => B ? ou C ?
+	//	- + newkey 
+	//		- si key deja set => ;//ERR_KEYSET (467)
+	//		- check newkey valable => ;//ERR_INVALIDMODEPARAM (696) ou ERR_INVALIDKEY (525) 
+	//		- chan->set_key(newkey);
+	//	- - key OU -
+	//		- chan->set_key("");
+	return;
+}

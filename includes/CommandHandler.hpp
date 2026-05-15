@@ -49,7 +49,7 @@ class CommandHandler
 		void	handleKICK(Server &server, Client *c, const Message &msg);
 		void	handleINVITE(Server &server, Client *c, const Message &msg);
 		void	handleTOPIC(Server &server, Client *c, const Message &msg);
-		//void	handleMODE(Server &server, Client *c, const Message &msg);
+		void	handleMODE(Server &server, Client *c, const Message &msg);
 		void	handlePART(Server &server, Client *c, const Message &msg);
 		//void	handleNAMES(Server &server, Client *c, const Message &msg);//Non obg mais utile pour JOIN => j'ai plutot fait un helper, on peut passer par lui si finalement on decide de coder la commande NAMES
 };
