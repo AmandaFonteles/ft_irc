@@ -32,7 +32,6 @@
 # include "Client.hpp"
 # include "CommandHandler.hpp"
 
-
 class	Server {
 private:
 	unsigned short		_port; //should I use unsigned short (for endian convertion - htons() and ntohs)
