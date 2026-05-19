@@ -291,9 +291,12 @@ void CommandHandler::registerClient(Server &server, Client *client)
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+
 //Aileen part :p
 bool	CommandHandler::isMemberChannel(Client *c, Channel *chan)///!\si incoherence d'etat entre chan et client ca peut renvoyer une erreur !
 {
+	if (!chan || !c)
+		return (false);
 	if (chan->isMember(c) && c->isInChannel(chan))
 		return (true);
 	return (false);
@@ -341,20 +344,19 @@ bool	CommandHandler::isValidClientName(std::string const &nickname)//checker que
 	allowedChar = allowedChar + "0123456789";
 	allowedChar = allowedChar + "-_[]\\`^{}|";//C'est juste pour que ce soit plus lisible qu'une seule grosse ligne
 
-//std::cout << "[DEBUG] allowChar string = \"" << allowedChar << "\""<< std::endl;
+std::cout << "[DEBUG] allowChar string = \"" << allowedChar << "\""<< std::endl;
 	if (nickname.empty() || nickname.size() > 9)//chaine non vide => min 1 max 9 (rfc2812)
 		return (false);
 	if (nickname.find_first_not_of(allowedChar) != std::string::npos)
 		return (false);
-	char first = nickname[0];
-	if (std::isdigit(static_cast<unsigned char>(first) || first == '-'))
+	if (nickname.find_first_of("0123456789-" == 0))//nickname[0] != 0123456789-#: (# et : ne sont de toutes façons pas autorises)
 		return (false);
 	return (true);
 }
 
 void CommandHandler::handleJOIN(Server &server, Client *c, const Message &msg)
 {
-//variables :
+//variables : 
 //	- std::string	key_tmp;
 //	- std::string	chan_tmp;
 	std::string	chan;
@@ -368,14 +370,13 @@ void CommandHandler::handleJOIN(Server &server, Client *c, const Message &msg)
 //checker que j'ai au moins 1 param non vide
 	if (!msg.params.size() || msg.params[0].empty())
 	{
-		c->set_bufferOut(Replies::ERR_NEEDMOREPARAMS(server.get_name(), c->get_nickname(), "JOIN")); // ERR_NEEDMOREPARAMS (461)
-		server.switchPollOut(c->get_socketFd());
+		;//ERR_NEEDMOREPARAMS(461)
 		return;
 	}
 	lst_chan = msg.params[0];
 	if (msg.params.size() > 1)
 		lst_key = msg.params[1];
-//si msg->param[0] = "0"
+//si msg->param[0] = "0" 
 	if (lst_chan == "0")//JOIN 0 == PART chan1,chan2...
 	{
 		;// => on cree un message part avec prefix = ???(celui du msg actuel ?), command = "PART", params = c->get_channels() (donc sous forme de string), trailing ???, has trailing ????
@@ -408,33 +409,21 @@ void CommandHandler::handleJOIN(Server &server, Client *c, const Message &msg)
 
 //	- Channel exist
 		chan_ptr = server.get_channel(chan);
-		if (chan_ptr && !isMemberChannel(c, chan_ptr))//mettre ce qu'il y a dedans dans un bloc qui retourne true si reussi en mode "no_error = checksJoinIfChannelExists(c, chan_ptr, key);" A voir avec les messages d'erreur ?
+		if (chan_ptr && !isMemberChannel(c, chan_ptr))//mettre ce qu'il y a dedans dans un bloc qui retourne true si reussi en mode "no_error = checksJoinIfChannelExists(c, chan_ptr, key);" A voir avec les messages d'erreur ? 
 		{
 			if (checkLimit(chan_ptr))
-			{
-				c->set_bufferOut(Replies::ERR_CHANNELISFULL(server.get_name(), c->get_nickname(), chan)); // ERR_CHANNELISFULL (471)
-				server.switchPollOut(c->get_socketFd());
-			}
+				;//ERR_CHANNELISFULL (471)
 			else if (chan_ptr->get_inviteOnly() && !chan_ptr->isInvited(c))
-			{
-				c->set_bufferOut(Replies::ERR_INVITEONLYCHAN(server.get_name(), c->get_nickname(), chan)); // ERR_INVITEONLYCHAN (473)
-				server.switchPollOut(c->get_socketFd());
-			}
+				;//ERR_INVITEONLYCHAN(473)
 			else if (checkChannelKey(chan_ptr, key))
-			{
-				c->set_bufferOut(Replies::ERR_BADCHANNELKEY(server.get_name(), c->get_nickname(), chan)); // ERR_BADCHANNELKEY (475)
-				server.switchPollOut(c->get_socketFd());
-			}
+				;//ERR_BADCHANNELKEY (475)
 			else
 				no_error = true;
 		}
 		else if (chan_ptr == NULL)//idem avec "no_error = checksJoinIfChannelDoesNotExists(c, chan_ptr, key);" ? A voir avec les messages d'erreur ?
 		{
 			if (!isValidChannelName(chan))
-			{
-				c->set_bufferOut(Replies::ERR_NOSUCHCHANNEL(server.get_name(), c->get_nickname(), chan)); // ERR_NOSUCHCHANNEL (403)
-				server.switchPollOut(c->get_socketFd());
-			}
+				;//ERR_NOSUCHCHANNEL (403)
 			else
 			{
 				chan_ptr = server.createChannel(chan);
@@ -456,7 +445,7 @@ void CommandHandler::handleJOIN(Server &server, Client *c, const Message &msg)
 		}
 	}
 
-//Questions :
+//Questions : 
 //Si + de clefs que de channels => clefs supplementaires ignorees
 //Comment gérer les messages d'erreur non bloquants => bool no_error
 	return;
@@ -464,7 +453,7 @@ void CommandHandler::handleJOIN(Server &server, Client *c, const Message &msg)
 
 void	CommandHandler::handlePRIVMSG(Server &server, Client *c, const Message &msg)
 {
-	//Le check du client non null à faire avant non ?
+	//Le check du client non null à faire avant non ? 
 	int								t = 0;//  0 = erreur, 1 = chan, 2 = client, 3 = deja vu
 	std::string						lst_target;
 	std::string						target;
@@ -477,17 +466,15 @@ void	CommandHandler::handlePRIVMSG(Server &server, Client *c, const Message &msg
 
 	if	(msg.params.empty() || msg.params[0].empty())
 	{
-		c->set_bufferOut(Replies::ERR_NORECIPIENT(server.get_name(), c->get_nickname())); // ERR_NORECIPIENT (411)
-		server.switchPollOut(c->get_socketFd());
+		;//ERR_NORECIPIENT(411)
 		return;
 	}
 	if (msg.params.size() < 2 || msg.params[1].empty())
 	{
-		c->set_bufferOut(Replies::ERR_NOTEXTTOSEND(server.get_name(), c->get_nickname())); // ERR_NOTEXTTOSEND (412)
-		server.switchPollOut(c->get_socketFd());
+		;//ERR_NOTEXTTOSEND(412)
 		return;
 	}
-
+	
 //checker les param (au moins 2) et si 2, !param[1].empty()
 	lst_target = msg.params[0];
 	while (!lst_target.empty() && pos != std::string::npos)//gerder la condition pos ?
@@ -508,52 +495,48 @@ void	CommandHandler::handlePRIVMSG(Server &server, Client *c, const Message &msg
 			t = 2;
 		switch (t)
 		{
-		case 1:
-			chan_target = server.get_channel(target);
-			if (chan_target == NULL)
-			{
-				c->set_bufferOut(Replies::ERR_NOSUCHCHANNEL(server.get_name(), c->get_nickname(), target)); // ERR_NOSUCHCHANNEL (403)
-				server.switchPollOut(c->get_socketFd());
-				break;
-			}
-			if (!isMemberChannel(c, chan_target))
-			{
-				c->set_bufferOut(Replies::ERR_CANNOTSENDTOCHAN(server.get_name(), c->get_nickname(), target)); // ERR_CANNOTSENDTOCHAN (404)
-				server.switchPollOut(c->get_socketFd());
-				break;
-			}
-
-			old_targets.insert(Server::lowerName(target));
-			chan_members = chan_target->get_members();
-			it = chan_members.begin();
-			while (it != chan_members.end())
-			{
-				user_target = *it;
-				if (old_targets.find(Server::lowerName(user_target->get_nickname())) == old_targets.end() && user_target != c)
+			case 1:
+				chan_target = server.get_channel(target);
+				if (chan_target == NULL)
 				{
-					;//envoyer le param[1] a la target
-					old_targets.insert(Server::lowerName(user_target->get_nickname()));
+					;//ERR_NOSUCHNICK (401)/ERR_NOSUCHCHANNEL(403) => perso je prefere 403
+					break;
 				}
-				it++;
-			}
-			break;
-		case 2:
-			user_target = server.get_client(target);
-			if (user_target == NULL || !user_target->get_registered())
-			{
-				c->set_bufferOut(Replies::ERR_NOSUCHNICK(server.get_name(), c->get_nickname(), target)); // ERR_NOSUCHNICK (401)
-				server.switchPollOut(c->get_socketFd());
+				if (!isMemberChannel(c, chan_target))
+				{
+					;//ERR_CANNOTSENDTOCHAN (404)
+					break;
+				}
+				old_targets.insert(Server::lowerName(target));
+				chan_members = chan_target->get_members();
+				it = chan_members.begin();
+				while (it != chan_members.end())
+				{
+					user_target = *it;
+					if (old_targets.find(Server::lowerName(user_target->get_nickname())) == old_targets.end() && user_target != c)
+					{
+						;//envoyer le param[1] a la target
+						old_targets.insert(Server::lowerName(user_target->get_nickname()));
+					}
+					it++;
+				}
+				break;
+			case 2:
+				user_target = checkClientExists(server, target);
+				if (user_target == NULL)
+				{
+					;//ERR_NOSUCHNICK (401)
+					break;
+				}
+				;//envoyer le param[1] a la target
+				old_targets.insert(Server::lowerName(target));
+				break;
+			case 3:
+				break;
+			default:
+				;//ERR_NOSUCHNICK(401)
 				break;
 			}
-			;//envoyer le param[1] a la target
-			old_targets.insert(Server::lowerName(target));
-			break;
-		case 3:
-			break;
-		default:
-			;//ERR_NOSUCHNICK(401)
-			break;
-		}
 		t = 0;
 	}
 	return;
@@ -572,20 +555,18 @@ void	CommandHandler::handleKICK(Server &server, Client *c, const Message &msg)//
 //Params necessaires (#chan list_user & raison(opt))
 	if (msg.params.empty() || msg.params.size() < 2)
 	{
-		c->set_bufferOut(Replies::ERR_NEEDMOREPARAMS(server.get_name(), c->get_nickname())); // ERR_NEEDMOREPARAMS (461)
-		server.switchPollOut(c->get_socketFd());
+		;//ERR_NEEDMOREPARAMS(461)
 		return;
 	}
 	chan_name = msg.params[0];
 	lst_members = msg.params[1];
 	if (msg.params.size() > 2)
 		reason = msg.params[2];
-//channel existant
+//channel existant 
 	chan = server.get_channel(chan_name);
 	if (!chan)
 	{
-		c->set_bufferOut(Replies::ERR_NOSUCHCHANNEL(server.get_name(), c->get_nickname(), chan_name)); // ERR_NOSUCHCHANNEL (403)
-		server.switchPollOut(c->get_socketFd());
+		;//ERR_NOSUCHCHANNEL (403)
 		return;
 	}
 	while (!lst_members.empty() && pos != std::string::npos)//virer condition pos ?
@@ -596,22 +577,13 @@ void	CommandHandler::handleKICK(Server &server, Client *c, const Message &msg)//
 			lst_members.erase(0, pos + 1);
 		else
 			lst_members.clear();
-		user_target = server.get_client(target);
+		user_target = checkClientExists(server, target);
 		if (!isMemberChannel(c, chan))//checker avec la normalisation du client name
-		{
-			c->set_bufferOut(Replies::ERR_NOTONCHANNEL(server.get_name(), c->get_nickname(), chan_name)); // ERR_NOTONCHANNEL (442)
-			server.switchPollOut(c->get_socketFd());
-		}
+			;//ERR_NOTONCHANNEL (442)
 		else if (!chan->isOperator(c))
-		{
-			c->set_bufferOut(Replies::ERR_CHANOPRIVSNEEDED(server.get_name(), c->get_nickname(), chan_name)); // ERR_CHANOPRIVSNEEDED (482)
-			server.switchPollOut(c->get_socketFd());
-		}
+			;//ERR_CHANOPRIVSNEEDED (482)
 		else if (!user_target || !user_target->get_registered() || !isMemberChannel(user_target, chan))
-		{
-			c->set_bufferOut(Replies::ERR_USERNOTINCHANNEL(server.get_name(), c->get_nickname(), target, chan_name)); // ERR_USERNOTINCHANNEL (441)
-			server.switchPollOut(c->get_socketFd());
-		}
+			;//ERR_USERNOTINCHANNEL (441)
 		else
 		{
 			;//message de kick
@@ -631,33 +603,18 @@ void	CommandHandler::handleINVITE(Server &server, Client *c, const Message &msg)
 		;//ERR_NEEDMOREPARAMS(461)
 		return;
 	}
-	invited_guy = server.get_client(msg.params[0]);
+	invited_guy = checkClientExists(server, msg.params[0]);
 	chan = server.get_channel(msg.params[1]);
 	if (chan == NULL)
-	{
-		c->set_bufferOut(Replies::ERR_NOSUCHCHANNEL(server.get_name(), c->get_nickname(), msg.params[1])); // ERR_NOSUCHCHANNEL (403)
-		server.switchPollOut(c->get_socketFd());
-	}
+		;//ERR_NOSUCHCHANNEL (403)
 	else if (!isMemberChannel(c, chan))
-	{
-		c->set_bufferOut(Replies::ERR_NOTONCHANNEL(server.get_name(), c->get_nickname(), msg.params[1])); // ERR_NOTONCHANNEL (442)
-		server.switchPollOut(c->get_socketFd());
-	}
+		;//ERR_NOTONCHANNEL (442)
 	else if (chan->get_inviteOnly() && !chan->isOperator(c))
-	{
-		c->set_bufferOut(Replies::ERR_CHANOPRIVSNEEDED(server.get_name(), c->get_nickname(), msg.params[1])); // ERR_CHANOPRIVSNEEDED (482)
-		server.switchPollOut(c->get_socketFd());
-	}
+		;//ERR_CHANOPRIVSNEEDED (482)
 	else if (invited_guy == NULL || !invited_guy->get_registered())
-	{
-		c->set_bufferOut(Replies::ERR_NOSUCHNICK(server.get_name(), c->get_nickname(), msg.params[0])); // ERR_NOSUCHNICK (401)
-		server.switchPollOut(c->get_socketFd());
-	}
+		;//ERR_NOSUCHNICK(401)
 	else if (isMemberChannel(invited_guy, chan))
-	{
-		c->set_bufferOut(Replies::ERR_USERONCHANNEL(server.get_name(), c->get_nickname(), msg.params[0], msg.params[1])); // ERR_USERONCHANNEL (443)
-		server.switchPollOut(c->get_socketFd());
-	}
+		;//ERR_USERONCHANNEL(443)
 	else
 	{
 		;//RPL_INVITING (341) a c
@@ -667,41 +624,31 @@ void	CommandHandler::handleINVITE(Server &server, Client *c, const Message &msg)
 	return;
 }
 
-void	CommandHandler::handleTOPIC(Server &server, Client *c, const Message &msg)//chan [nouveau topic]
+void	CommandHandler::handleTOPIC(Server &server, Client *c, const Message &msg)//chan [nouveau topic] 
 {
 	Channel		*chan;
 	std::string	topic;
 
 	if (msg.params.empty() || msg.params[0].empty())
 	{
-		c->set_bufferOut(Replies::ERR_NEEDMOREPARAMS(server.get_name(), c->get_nickname())); // ERR_NEEDMOREPARAMS (461)
-		server.switchPollOut(c->get_socketFd());
+		;//ERR_NEEDMOREPARAMS(461)
 		return;
 	}
 	chan = server.get_channel(msg.params[0]);
 	if (chan == NULL)
-	{
-		c->set_bufferOut(Replies::ERR_NOSUCHCHANNEL(server.get_name(), c->get_nickname(), msg.params[0])); // ERR_NOSUCHCHANNEL (403)
-		server.switchPollOut(c->get_socketFd());
-	}
+		;//ERR_NOSUCHCHANNEL (403)
 	else if (!isMemberChannel(c, chan))
-	{
-		c->set_bufferOut(Replies::ERR_NOTONCHANNEL(server.get_name(), c->get_nickname(), msg.params[0])); // ERR_NOTONCHANNEL (442)
-		server.switchPollOut(c->get_socketFd());
-	}
+		;//ERR_NOTONCHANNEL (442)
 	else if (msg.params.size() == 1)
 	{
 		topic = chan->get_topic();
 		if (topic.empty())
-			c->set_bufferOut(Replies::RPL_NOTOPIC(server.get_name(), c->get_nickname(), msg.params[0])); // RPL_NOTOPIC (331)
+			;//RPL_NOTOPIC (331)
 		else
-			c->set_bufferOut(Replies::RPL_TOPIC(server.get_name(), c->get_nickname(), msg.params[0], topic)); // RPL_TOPIC (332)
+			;//RPL_TOPIC (332)
 	}
 	else if (chan->get_topicProtected() && !chan->isOperator(c))
-	{
-		c->set_bufferOut(Replies::ERR_CHANOPRIVSNEEDED(server.get_name(), c->get_nickname(), msg.params[0])); // ERR_CHANOPRIVSNEEDED (482)
-		server.switchPollOut(c->get_socketFd());
-	}
+		;//ERR_CHANOPRIVSNEEDED (482)
 	else
 	{
 		chan->set_topic(msg.params[1], c);
@@ -726,8 +673,6 @@ void	CommandHandler::handlePART(Server &server, Client *c, const Message &msg)//
 	lst_chan = msg.params[0];
 	if (msg.params.size() > 1)
 		reason = msg.params[1];
-	else if (msg.hasTrailing)//checker avec Nayel comment il gere est-ce qu'il met trailing en dernier parametre ou bien il est oblige de la store separement
-		reason = msg.trailing;
 	while (!lst_chan.empty())
 	{
 		pos = lst_chan.find(",", 0);
@@ -738,15 +683,9 @@ void	CommandHandler::handlePART(Server &server, Client *c, const Message &msg)//
 			lst_chan.clear();
 		chan_ptr = server.get_channel(chan);
 		if (chan_ptr == NULL)
-		{
-			c->set_bufferOut(Replies::ERR_NOSUCHCHANNEL(server.get_name(), c->get_nickname(), chan)); // ERR_NOSUCHCHANNEL (403)
-			server.switchPollOut(c->get_socketFd());
-		}
+			;//ERR_NOSUCHCHANNEL (403)
 		else if (!isMemberChannel(c, chan_ptr))
-		{
-			c->set_bufferOut(Replies::ERR_NOTONCHANNEL(server.get_name(), c->get_nickname(), chan)); // ERR_NOTONCHANNEL (442)
-			server.switchPollOut(c->get_socketFd());
-		}
+			;//ERR_NOTONCHANNEL (442)
 		else
 		{
 			;//broadcast de la reponse de PART => "<c au bon format> <chan> :raison"
@@ -756,7 +695,7 @@ void	CommandHandler::handlePART(Server &server, Client *c, const Message &msg)//
 	return;
 }
 
-void	CommandHandler::namesReply(Server &server, Client *c, Channel *chan)//A voir s'il faut le message du JOIN aussi pour Nayel
+void	CommandHandler::namesReply(Server &server, Client *c, Channel *chan)//A voir s'il faut le message du JOIN aussi pour Nayel 
 {
 	std::string						lst_names;
 	std::set<Client *>				members = chan->get_members();
@@ -775,29 +714,114 @@ void	CommandHandler::namesReply(Server &server, Client *c, Channel *chan)//A voi
 	}
 	;//envoyer a c RPL_NAMREPLY (353) avec lst_names comme tail, le symbole du chan a priori ce sera tj = pour nous
 	;//envoyer a c RPL_ENDOFNAMES (366)
-	c->set_bufferOut(Replies::RPL_NAMREPLY(server.get_name(), c->get_nickname(), chan->get_name(), lst_names)); // RPL_NAMREPLY (353)
-	c->set_bufferOut(Replies::RPL_ENDOFNAMES(server.get_name(), c->get_nickname(), chan->get_name())); // RPL_ENDOFNAMES (366)
-	server.switchPollOut(c->get_socketFd());
 
 	return;
 }
 
-void	CommandHandler::handleMODE(Server &server, Client *c, const Message &msg)//target (chan) [modestring mode arg] => ex: #Tagada +o Pouet
-{
-	//check que le chan existe (params[0]) => ;//ERR_NOSUCHCHANNEL (403)
-	//check si params[1] n'existe pas => ;//RPL_CHANNELMODEIS (324)
-	//check si c est un operator => ;//ERR_CHANOPRIVSNEEDED (482)
-	//check si params[1] est un mode reconu (if else hein) => ;//ERR_UMODEUNKNOWNFLAG (501)
+void	CommandHandler::handleMODE(Server &server, Client *c, const Message &msg)//target (chan) [modestring mode_arg] => ex: #Tagada +o Pouet tagada
+{///!\ ON EST CENSES POUVOIR AVOIR DES TRUCS COMME +ltkey pouet... 
+	Channel		*chan_ptr;
+	Client		*target_user;
+	std::string	modestring;
+
+	if (msg.params.empty() || msg.params[0].empty())
+	{
+		;//ERR_NEEDMOREPARAMS(461)
+		return;
+	}
+	chan_ptr = server.get_channel(msg.params[0]);
+	if (!chan_ptr)
+	{
+		;//ERR_NOSUCHCHANNEL (403)
+		return;
+	}
+	if (msg.params.size() < 2)
+	{
+		;//RPL_CHANNELMODEIS (324)
+		return;
+	}
+	if (!chan_ptr->isOperator(c))
+	{
+		;//ERR_CHANOPRIVSNEEDED (482)
+		return;
+	}
+	modestring = msg.params[1];
+	if (modestring.size() != 2 || modestring.find_first_not_of("+-itlok") != std::string::npos
+		|| (modestring[0] != '+' && modestring[0] != '-')
+		|| modestring.find_first_of("itlok") == std::string::npos)
+	{
+		;//ERR_UNKNOWNMODE (472)
+		return;
+	}
+
+	std::string			type[10] = {"+i","-i","+t","-t","+l","-l","+o","-o","+k","-k"};
+	int					i = 0;
+	std::stringstream	extract_nb;
+	size_t				nb_l = 0;
+
+	while (i < 10)
+	{
+		if (type[i] == modestring)
+			break;
+		i++;
+	}
+	switch (i)
+	{
 	//si i (+ ou -) (invite-only) => D ?
 	//	- + => chan->set_inviteOnly(true);
 	//	- - => chan->set_inviteOnly(false);
+		case 0://+i
+			if (chan_ptr->get_inviteOnly())
+				return;
+			chan_ptr->set_inviteOnly(true, c);
+			;//message broadcast du changement => j'hesite soit on le met a chaque fois comme ici, soit on ne le fait qu'une fois apres le switch case, je te laisse voir le plus pratique pour toi Nayel
+			break;
+		case 1://-i
+			if (!chan_ptr->get_inviteOnly())
+				return;
+			chan_ptr->set_inviteOnly(false, c);
+			;//message broadcast du changement
+			break;
 	//si t (+ ou -) (topic protected) => D ?
 	//	- + => chan->set_topicProtected(true);
 	//	- - => chan->set_topicProtected(false);
-	//si l (+ ou -) (limit) => +l 10 ou -l => C ?
-	//	- + nb => set_limit(nb) // /!\ 0 ? ou pas d'args ? = >ERR_NEEDMOREPARAMS ? a check
+		case 2://+t
+			if (chan_ptr->get_topicProtected())
+				return;
+			chan_ptr->set_topicProtected(true, c);
+			;//message broadcast du changement
+			break;
+		case 3://-t
+			if (!chan_ptr->get_topicProtected())
+				return;
+			chan_ptr->set_topicProtected(false, c);
+			;//message broadcast du changement
+			break;
+	//si l (+ ou -) (limit) => +l 10 ou -l => C ? => ignore la commande si pas de param
+	//	- + nb => set_limit(nb) 
 	//	- - => set_limit(0);
-	//si o (operator) +o nickname -o nickname => B ?
+		case 4://+l
+			if (msg.params.size() < 3 || msg.params[2].empty())
+				return;
+			extract_nb << msg.params[2];
+			extract_nb >> nb_l;
+			if (extract_nb.fail() || !extract_nb.eof() || nb_l == 0)
+			{
+				;//ERR_INVALIDMODEPARAM (696)
+				return;
+			}
+			if (chan_ptr->get_limit() == nb_l)
+				return;
+			chan_ptr->set_limit(nb_l, c);
+			;//message broadcast du changement
+			break;
+		case 5://-l
+			if (chan_ptr->get_limit() == 0)
+				return;
+			chan_ptr->set_limit(0, c);
+			;//message broadcast du changement
+			break;
+	//si o (operator) +o nickname -o nickname => B ? => ignore la commande si pas de param
 	//	- + member =>
 	//		- check member est dans le chan => ERR_USERNOTINCHANNEL ?
 	//		- ajoute member en operateur si pas deja et envoie message si change;ent a eu lieu
@@ -805,12 +829,73 @@ void	CommandHandler::handleMODE(Server &server, Client *c, const Message &msg)//
 	//		- check member est dans le chan => ERR_USERNOTINCHANNEL ?
 	//		- retire member des operateurs si bien l4un d4entre eux et envoie message si change;ent a eu lieu
 	//	- dans les deux cas continuer silencieusement (dc pas d'erreur ni de reponse juste on termine) sans ajouter ou retirer le status si est deja ou n'est deja pas operator
-	//k (key) => B ? ou C ?
-	//	- + newkey
+		case 6://+o
+			if (msg.params.size() < 3 || msg.params[2].empty())
+				return;
+			target_user = checkClientExists(server, msg.params[2]);
+			if (!target_user || !isMemberChannel(target_user, chan_ptr))
+			{
+				;//ERR_USERNOTINCHANNEL (441)
+				return;
+			}
+			if (!chan_ptr->isOperator(target_user))
+			{
+				chan_ptr->addOperator(target_user);
+				;//broadcast sur chan_ptr pour dire que target_user est bien operator => "<c au bon format> MODE #chan +o user_target\r\n"
+			}
+			break;
+		case 7://-o
+			if (msg.params.size() < 3 || msg.params[2].empty())
+				return;
+			target_user = checkClientExists(server, msg.params[2]);
+			if (!target_user || !isMemberChannel(target_user, chan_ptr))
+			{
+				;//ERR_USERNOTINCHANNEL (441)
+				return;
+			}
+			if (chan_ptr->isOperator(target_user))
+			{
+				chan_ptr->removeOperator(target_user);
+				;//broadcast sur chan_ptr pour dire que target_user n'est plus operator "<c au bon format> MODE #chan -o user_target\r\n"
+			}
+			break;
+	//k (key) => B ? ou C ? => ignore la commande si pas de param
+	//	- + newkey 
 	//		- si key deja set => ;//ERR_KEYSET (467)
-	//		- check newkey valable => ;//ERR_INVALIDMODEPARAM (696) ou ERR_INVALIDKEY (525)
+	//		- check newkey valable => ;//ERR_INVALIDMODEPARAM (696) ou ERR_INVALIDKEY (525) 
 	//		- chan->set_key(newkey);
-	//	- - key OU -
+	//	- -k key OU -k
 	//		- chan->set_key("");
+	//Servers MAY choose to hide sensitive information when sending the mode changes.
+	//  key        =  1*23( %x01-05 / %x07-08 / %x0C / %x0E-1F / %x21-7F )
+    //   ; any 7-bit US_ASCII character,
+    //   ; except NUL, CR, LF, FF, h/v TABs, and " "
+		case 8://+k
+			if (msg.params.size() < 3 || msg.params[2].empty())
+				return;
+			if (chan_ptr->hasKey())
+			{
+				;//ERR_KEYSET (467)
+				return;
+			}
+			if (!chan_ptr->isValidKey(msg.params[2]))//1->23char, ascii vsibiles, pas d'espaces, \r\n\t\v\n\0 interdits, pas de ','
+			{
+				;//ERR_INVALIDMODEPARAM (696)
+				return;
+			}
+			chan_ptr->set_key(msg.params[2], c);
+			;//broadcast un message indiquant qu'une clef a ete mise sur le channel (on la donne ou pas ?)
+			break;
+		case 9://-k
+			if (!chan_ptr->hasKey())
+				return;
+			chan_ptr->set_key("", c);
+			;//broadcast un message indiquant que la clef du channel a ete effacee
+			break;
+		default:
+			;//ERR_UNKNOWNMODE (472)
+			return;
+			break;
+	}
 	return;
 }
