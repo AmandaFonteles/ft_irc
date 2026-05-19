@@ -34,16 +34,15 @@ Client::~Client()
 }
 
 /********SETTERS********/
-void	Client::set_nickname(std::string nickname)//TO DO
+void	Client::set_nickname(std::string nickname)
 {
-	//quels checks ? //voir dans le serveur si d'autres clients ont le meme nickname ? du coup ca peut valoir le coup de faire plutot une map<uname/nickname, Client> que <int, Client> ?
 	_nickname = nickname;
 	return;//exception ? Booleen ?
 }
 
 void	Client::set_username(std::string username)
 {
-	// if (_username.empty() && !username.empty())
+	if (_username.empty() && !username.empty())
 		_username = username;
 	return;
 }
