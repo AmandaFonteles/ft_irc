@@ -20,7 +20,7 @@ OBJS_DIR	:= objects
 SRCS		:= $(addprefix $(SRCS_DIR)/, \
 				Channel.cpp \
 				Client.cpp \
-				CommandHandler \
+				CommandHandler.cpp \
 				Message.cpp \
 				Parser.cpp \
 				Server.cpp \

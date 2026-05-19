@@ -3,27 +3,27 @@
 /*                                                        :::      ::::::::   */
 /*   Client.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
+/*   By: dnayel <dnayel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/28 14:55:46 by aibonade          #+#    #+#             */
-/*   Updated: 2026/05/12 16:29:15 by aibonade         ###   ########.fr       */
+/*   Updated: 2026/05/19 15:16:33 by dnayel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 # include "../includes/Client.hpp"
 
 /********CONSTRUCTORS & DESTRUCTOR********/
-Client::Client():_socketFd(-1), _passOk(false), _nickname(""), _username(""), _registered(false), _bufferIn(""), _bufferOut("")
+Client::Client():_socketFd(-1), _passOk(false), _nickname(""), _username(""), _registered(false), _bufferIn(""), _bufferOut(""), _hostname("localhost"), _shouldClose(false)
 {
 	return;
 }
 
-Client::Client(Client const &cpy):_socketFd(cpy._socketFd), _passOk(cpy._passOk), _nickname(cpy._nickname), _username(cpy._username), _registered(cpy._registered), _channels(cpy._channels), _bufferIn(cpy._bufferIn), _bufferOut(cpy._bufferOut)
+Client::Client(Client const &cpy):_socketFd(cpy._socketFd), _passOk(cpy._passOk), _nickname(cpy._nickname), _username(cpy._username), _registered(cpy._registered), _channels(cpy._channels), _bufferIn(cpy._bufferIn), _bufferOut(cpy._bufferOut), _hostname(cpy._hostname), _shouldClose(cpy._shouldClose)
 {
 	return;
 }
 
-Client::Client(int socketFd):_socketFd(socketFd), _passOk(false), _nickname(""), _username(""), _registered(false), _bufferIn(""), _bufferOut("")
+Client::Client(int socketFd):_socketFd(socketFd), _passOk(false), _nickname(""), _username(""), _registered(false), _bufferIn(""), _bufferOut(""), _hostname("localhost"), _shouldClose(false)
 {
 	return;
 }
@@ -38,7 +38,7 @@ void	Client::set_nickname(std::string nickname)//TO DO
 {
 	//quels checks ? //voir dans le serveur si d'autres clients ont le meme nickname ? du coup ca peut valoir le coup de faire plutot une map<uname/nickname, Client> que <int, Client> ?
 	_nickname = nickname;
-	return;//exception ? Booleen ? 
+	return;//exception ? Booleen ?
 }
 
 void	Client::set_username(std::string username)
@@ -167,4 +167,32 @@ bool	Client::isInChannel(Channel *chan) const
 	if (_channels.find(chan) != _channels.end())
 		return (true);
 	return (false);
+}
+
+/********NAYEL********/
+void	Client::set_hostname(std::string hostname)
+{
+	_hostname = hostname;
+}
+std::string	Client::get_hostname()
+{
+	return (_hostname);
+}
+
+void	Client::set_shouldClose(bool value)
+{
+	_shouldClose = value;
+}
+bool	Client::get_shouldClose() const
+{
+	return (_shouldClose);
+}
+
+void	Client::set_realname(std::string realname)
+{
+	_realname = realname;
+}
+std::string	Client::get_realname() const
+{
+	return (_realname);
 }

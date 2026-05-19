@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   CommandHandler.cpp                                 :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
+/*   By: dnayel <dnayel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/05 15:55:21 by dnayel            #+#    #+#             */
-/*   Updated: 2026/05/14 19:59:34 by aibonade         ###   ########.fr       */
+/*   Updated: 2026/05/19 14:53:23 by dnayel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,127 +14,283 @@
 #include "../includes/Server.hpp"
 #include "../includes/Client.hpp"
 #include "../includes/Channel.hpp"
+#include "../includes/Replies.hpp"
 
 #include <cctype>
 #include <iostream>
 
-void CommandHandler::handleCommand(Server &server, Client &client, const Message &msg)
+void CommandHandler::handleCommand(Server &server, Client *client, const Message &msg)
 {
 	if (msg.command.empty())
 		return; // Message ou comportement particulier à définir ??
 // Authorized COMMANDS even without registration
+	if (msg.command == "CAP") // Ignore first, modern clients send it and disconnect if ERR_
+		return;
 	if (msg.command == "PASS")
 		handlePASS(server, client, msg);
 	else if (msg.command == "NICK")
 		handleNICK(server, client, msg);
 	else if (msg.command == "USER")
 		handleUSER(server, client, msg);
+	else if (msg.command == "PING")
+		handlePING(server, client, msg);
+	else if (msg.command == "PONG")
+		return;
+	else if (msg.command == "QUIT")
+		handleQUIT(server, client, msg);
 
-// Unauthorized COMMANDS without registration
-	if (!client.get_registered()) // CHECK comment la variable est appelée dans Client.hpp
+// Registration check
+	if (!client->get_registered()) // CHECK comment la variable est appelée dans Client.hpp
 	{
-		// Send error message to client (e.g. "451 :You have not registered")
+		const std::string nick = client->get_nickname().empty() ? "*" : client->get_nickname(); // * instead of empty string for ERR_ replies (IRC convention)
+		client->set_bufferOut(Replies::ERR_NOTREGISTERED(server.get_name(), nick));
+		server.switchPollOut(client->get_socketFd());
 		return;
 	}
+// Post registration Authorized COMMANDS
+	if (msg.command == "JOIN")
+		handleJOIN(server, client, msg);
+	else if (msg.command == "PRIVMSG")
+		handlePRIVMSG(server, client, msg);
+	else if (msg.command == "KICK")
+		handleKICK(server, client, msg);
+	else if (msg.command == "INVITE")
+		handleINVITE(server, client, msg);
+	else if (msg.command == "TOPIC")
+		handleTOPIC(server, client, msg);
+	else if (msg.command == "MODE")
+		handleMODE(server, client, msg);
+	else if (msg.command == "PART")
+		handlePART(server, client, msg);
+
 // Ignored COMMANDS (not implemented) !!! MAYBE MORE TO ADD
-	if (msg.command == "CAP"   || msg.command == "WHO"	||
-		msg.command == "WHOIS" || msg.command == "AWAY" ||
-		msg.command == "NAMES" || msg.command == "LIST"	||
-		msg.command == "MOTD"  || msg.command == "LUSERS" )
+	if (msg.command == "WHO"	|| msg.command == "WHOIS"	||
+		msg.command == "NAMES"	|| msg.command == "AWAY"	||
+		msg.command == "MOTD"	|| msg.command == "LIST"	||
+		msg.command == "LUSERS"	|| msg.command == "LUSERS")
 		return;
 
 // Comportement si commande invalide ou inconnue ??
 
 }
 
-void CommandHandler::handlePASS(Server &server, Client &client, const Message &msg)
-{
-	// Handle PASS command (e.g. check password, set client password, etc.)
+// Handle PASS command (e.g. check password, set client password, etc.)
 //	PASS
 //Paramètres : <password>
 //Rôle dans la registration :
 //Le mot de passe doit être envoyé avant toute tentative d'enregistrement. Il est comparé au mot de passe fourni au lancement du serveur (./ircserv <port> <password>). La spec précise que si plusieurs PASS sont envoyés avant registration, seul le dernier compte.
 //Vérifications dans la fonction :
-
-
 //msg.paramCount() < 1 → ERR_NEEDMOREPARAMS (461)
 //client.registered == true → ERR_ALREADYREGISTERED (462)
 //param(0) != server.getPassword() → ERR_PASSWDMISMATCH (464) + ERROR + shouldClose = true
-
-
 //⚠️ Notes importantes :
-
 //Selon la spec : "Servers MUST send at least one of these two messages" (ERR_PASSWDMISMATCH ou ERROR). On envoie les deux pour être propre.
 //En cas de mauvais mot de passe, la connexion doit être fermée (après avoir vidé le outBuffer avec le message d'erreur).
 //ERROR est envoyé sans préfixe :server — c'est une commande directe, pas un numeric.
 //En cas de succès : silence total — on ne répond rien. C'est la convention IRC.
 //passOk = true ne déclenche PAS la registration seul : il faut aussi NICK et USER.
+void CommandHandler::handlePASS(Server &server, Client *client, const Message &msg)
+{
+	const std::string serverName = server.get_name();
+	const std::string nickname = client->get_nickname().empty() ? "*" : client->get_nickname(); // * instead of empty string for ERR_ replies (IRC convention)
+
+	// Already registered
+	if (client->get_registered())
+	{
+		client->set_bufferOut(Replies::ERR_ALREADYREGISTERED(serverName, nickname));
+		server.switchPollOut(client->get_socketFd());
+		return;
+	}
+
+	// Not enough params
+	if (msg.paramsCount() < 1)
+	{
+		client->set_bufferOut(Replies::ERR_NEEDMOREPARAMS(serverName, nickname, "PASS"));
+		server.switchPollOut(client->get_socketFd());
+		return;
+	}
+
+	const std::string password = msg.param(0);
+	if (password != server.get_password())
+	{
+		client->set_bufferOut(Replies::ERR_PASSWDMISMATCH(serverName, nickname));
+		client->set_bufferOut(Replies::ERROR_MSG("Password incorrect"));
+		server.switchPollOut(client->get_socketFd());
+		client->set_shouldClose(true);
+		return;
+	}
+	client->set_passOk(true);
 }
 
-void CommandHandler::handleNICK(Server &server, Client &client, const Message &msg)
-{
-	// Handle NICK command (e.g. check nickname validity, set client nickname, etc.)
+// Handle NICK command (e.g. check nickname validity, set client nickname, etc.)
 //	NICK
 //Paramètres : <nickname>
 //Double rôle :
-
 //Pendant la registration : définit le pseudo pour la première fois.
 //Après registration : change le pseudo en cours de session.
-
 //Règles de validité d'un nick (RFC 1459 + modern.ircdocs) :
-
 //Longueur : 1 à 9 caractères
 //Premier caractère : lettre [A-Za-z] ou l'un de []{}|\^ ` - _
 //Caractères suivants : idem + chiffres [0-9]
 //Explicitement interdits en première position : #, &, :, $
 //Les chiffres en première position : la spec dit que les serveurs MAY disallow — on les interdit pour la conformité
-
 //Vérifications dans la fonction :
-
-
 //msg.paramCount() < 1 → ERR_NONICKNAMEGIVEN (431)
 //Nick invalide (caractères interdits, mauvaise longueur) → ERR_ERRONEUSNICKNAME (432)
 //Nick identique à l'actuel → ignorer silencieusement
 //Nick déjà pris par un autre client → ERR_NICKNAMEINUSE (433)
-
-
 //⚠️ Notes importantes :
-
 //Le serveur confirme le changement en envoyant NICK_CHANGE à l'émetteur et à tous les membres des canaux partagés. C'est comme ça que les autres clients voient le nouveau pseudo.
 //Avant registration, NICK ne génère aucune réponse en cas de succès : on attend que la registration soit complète pour envoyer les 001-004.
 //La spec indique : "The NICK message may be sent from the server to clients to acknowledge their NICK command was successful" — donc si déjà registered, on envoie le NICK_CHANGE même à soi-même.
-}
-
-void CommandHandler::handleUSER(Server &server, Client &client, const Message &msg)
+void CommandHandler::handleNICK(Server &server, Client *client, const Message &msg)
 {
-	// Handle USER command (e.g. set client username, realname, etc.)
+	const std::string serverName = server.get_name();
+	const std::string currentNickname = client->get_nickname().empty() ? "*" : client->get_nickname();
+
+	// No params
+	if (msg.paramsCount() < 1)
+	{
+		client->set_bufferOut(Replies::ERR_NONICKNAMEGIVEN(serverName, currentNickname));
+		server.switchPollOut(client->get_socketFd());
+		return;
+	}
+	const std::string newNickname = msg.param(0);
+	// invalid nickname
+	if (!isValidClientName(newNickname))
+	{
+		client->set_bufferOut(Replies::ERR_ERRONEUSNICKNAME(serverName, currentNickname, newNickname));
+		server.switchPollOut(client->get_socketFd());
+		return;
+	}
+	// Same nickname
+	if (newNickname == currentNickname)
+		return;
+	// Already used
+	if (server.get_client(newNickname) != NULL)
+	{
+		client->set_bufferOut(Replies::ERR_NICKNAMEINUSE(serverName, currentNickname, newNickname));
+		server.switchPollOut(client->get_socketFd());
+		return;
+	}
+	// Update client nickname + msg to shared channels if already registered
+	if (client->get_registered())
+	{
+		const std::string nickChangeMsg = Replies::NICK_CHANGE(client->get_nickname(), client->get_username(), client->get_hostname(), newNickname);
+		client->set_bufferOut(nickChangeMsg);
+		server.switchPollOut(client->get_socketFd());
+	}
+	client->set_nickname(newNickname);
+
+	registerClient(server, client);
+}
+// Handle USER command (e.g. set client username, realname, etc.)
 //USER
 //Paramètres : <username> 0 * :<realname>
 //Rôle : Fournit l'identité complète du client. Envoyé une seule fois pendant la registration.
 //Décomposition des paramètres :
-
 //param(0) = username : identifiant Unix-like, ex: "ali"
 //param(1) = 0 : mode utilisateur (ignoré par ft_irc, valeur 0 recommandée par la spec)
 //param(2) = * : nom du serveur distant (ignoré, vestige IRC des années 90)
 //param(3) / trailing = realname : nom complet libre, peut contenir des espaces → doit être en trailing dans la commande
-
 //Vérifications dans la fonction :
-
-
 //client.registered == true → ERR_ALREADYREGISTERED (462)
 //msg.paramCount() < 4 → ERR_NEEDMOREPARAMS (461)
 //username vide (param(0) == "") → ERR_NEEDMOREPARAMS (461) (spec : "If it is empty, the server SHOULD reject the command")
-
-
 //⚠️ Notes importantes :
-
 //username et realname ne peuvent être modifiés qu'en se déconnectant et reconnectant. Contrairement au nick, ils sont figés après registration.
 //La spec indique que si un serveur Ident est disponible, le username fourni par Ident remplace celui de USER — pour ft_irc, on utilise toujours celui de USER.
 //Le username peut être préfixé d'un ~ si pas d'Ident (convention serveur) — pour ft_irc, on stocke tel quel.
 //realname peut contenir n'importe quel caractère (espaces inclus) car c'est un trailing.
+void CommandHandler::handleUSER(Server &server, Client *client, const Message &msg)
+{
+	const std::string serverName = server.get_name();
+	const std::string nickname = client->get_nickname().empty() ? "*" : client->get_nickname();
+
+	// Already registered
+	if (client->get_registered())
+	{
+		client->set_bufferOut(Replies::ERR_ALREADYREGISTERED(serverName, nickname));
+		server.switchPollOut(client->get_socketFd());
+		return;
+	}
+	// Not enough params
+	if (msg.paramsCount() < 4)
+	{
+		client->set_bufferOut(Replies::ERR_NEEDMOREPARAMS(serverName, nickname, "USER"));
+		server.switchPollOut(client->get_socketFd());
+		return;
+	}
+	// Empty username
+	const std::string username = msg.param(0);
+	if (username.empty())
+	{
+		client->set_bufferOut(Replies::ERR_NEEDMOREPARAMS(serverName, nickname, "USER"));
+		server.switchPollOut(client->get_socketFd());
+		return;
+	}
+	client->set_username(username);
+	client->set_realname(msg.param(3));
+
+	registerClient(server, client);
+}
+
+//RÉCUPÉRATION DU TOKEN :
+//Cas 1 : "PING token" (paramètre normal, pas de ':')
+//  msg.param(0) = "token"   msg.trailing = ""   msg.hasTrailing = false
+//Cas 2 : "PING :token" (trailing)
+//  msg.params = []   msg.trailing = "token"   msg.hasTrailing = true
+//  msg.param(0) retourne msg.trailing car params est vide et hasTrailing=true
+//msg.param(0) unifie les deux cas grâce à la logique de Message::param().
+//Si les deux sont vides (PING sans argument), on répond PONG avec "".
+void CommandHandler::handlePING(Server &server, Client *client, const Message &msg)
+{
+	const std::string token = msg.param(0);
+
+	client->set_bufferOut(Replies::PONG(server.get_name(), token));
+	server.switchPollOut(client->get_socketFd());
+}
+//"The server acknowledges this by replying with an ERROR message and closing the connection to the client."
+//"Servers SHOULD prepend <reason> with the ASCII string 'Quit: ' when sending QUIT messages to other clients."
+void CommandHandler::handleQUIT(Server &server, Client *client, const Message &msg)
+{
+	const std::string reason = msg.hasTrailing ? msg.trailing : "";
+	const std::string broadcastquitMsg = "Quit: " + reason;
+
+	if (client->get_registered())
+		server.removeClientFromAllChannels(client->get_socketFd()); // broadcast à ajouter
+
+	const std::string errorReason = reason.empty() ? "Goodbye" : reason;
+	client->set_bufferOut(Replies::ERROR_MSG(client->get_hostname() + " (" + errorReason + ")"));
+	server.switchPollOut(client->get_socketFd());
+	client->set_shouldClose(true);
+}
+
+void CommandHandler::registerClient(Server &server, Client *client)
+{
+	if (client->get_registered())
+		return;
+	if (!client->get_passOk() || client->get_nickname().empty() || client->get_username().empty())
+		return;
+	client->set_registered(true);
+
+	const std ::string name = server.get_name();
+	const std::string nickname = client->get_nickname();
+	const std::string user = client->get_username();
+	const std::string host = client->get_hostname();
+
+	// Send welcome messages 001-004
+	client->set_bufferOut(Replies::RPL_WELCOME(name, nickname, user, host));
+	client->set_bufferOut(Replies::RPL_YOURHOST(name, nickname));
+	client->set_bufferOut(Replies::RPL_CREATED(name, nickname));
+	client->set_bufferOut(Replies::RPL_MYINFO(name, nickname));
+	server.switchPollOut(client->get_socketFd());
+	std::cout << "[INFO] Client " << nickname << "!" << user << "@" << host << std::endl;
 }
 
 
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
 //Aileen part :p
 bool	CommandHandler::isMemberChannel(Client *c, Channel *chan)///!\si incoherence d'etat entre chan et client ca peut renvoyer une erreur !
 {
@@ -185,19 +341,20 @@ bool	CommandHandler::isValidClientName(std::string const &nickname)//checker que
 	allowedChar = allowedChar + "0123456789";
 	allowedChar = allowedChar + "-_[]\\`^{}|";//C'est juste pour que ce soit plus lisible qu'une seule grosse ligne
 
-std::cout << "[DEBUG] allowChar string = \"" << allowedChar << "\""<< std::endl;
+//std::cout << "[DEBUG] allowChar string = \"" << allowedChar << "\""<< std::endl;
 	if (nickname.empty() || nickname.size() > 9)//chaine non vide => min 1 max 9 (rfc2812)
 		return (false);
 	if (nickname.find_first_not_of(allowedChar) != std::string::npos)
 		return (false);
-	if (nickname.find_first_of("0123456789-" == 0))//nickname[0] != 0123456789-#: (# et : ne sont de toutes façons pas autorises)
+	char first = nickname[0];
+	if (std::isdigit(static_cast<unsigned char>(first) || first == '-'))
 		return (false);
 	return (true);
 }
 
 void CommandHandler::handleJOIN(Server &server, Client *c, const Message &msg)
 {
-//variables : 
+//variables :
 //	- std::string	key_tmp;
 //	- std::string	chan_tmp;
 	std::string	chan;
@@ -211,13 +368,14 @@ void CommandHandler::handleJOIN(Server &server, Client *c, const Message &msg)
 //checker que j'ai au moins 1 param non vide
 	if (!msg.params.size() || msg.params[0].empty())
 	{
-		;//ERR_NEEDMOREPARAMS(461)
+		c->set_bufferOut(Replies::ERR_NEEDMOREPARAMS(server.get_name(), c->get_nickname(), "JOIN")); // ERR_NEEDMOREPARAMS (461)
+		server.switchPollOut(c->get_socketFd());
 		return;
 	}
 	lst_chan = msg.params[0];
 	if (msg.params.size() > 1)
 		lst_key = msg.params[1];
-//si msg->param[0] = "0" 
+//si msg->param[0] = "0"
 	if (lst_chan == "0")//JOIN 0 == PART chan1,chan2...
 	{
 		;// => on cree un message part avec prefix = ???(celui du msg actuel ?), command = "PART", params = c->get_channels() (donc sous forme de string), trailing ???, has trailing ????
@@ -250,21 +408,33 @@ void CommandHandler::handleJOIN(Server &server, Client *c, const Message &msg)
 
 //	- Channel exist
 		chan_ptr = server.get_channel(chan);
-		if (chan_ptr && !isMemberChannel(c, chan_ptr))//mettre ce qu'il y a dedans dans un bloc qui retourne true si reussi en mode "no_error = checksJoinIfChannelExists(c, chan_ptr, key);" A voir avec les messages d'erreur ? 
+		if (chan_ptr && !isMemberChannel(c, chan_ptr))//mettre ce qu'il y a dedans dans un bloc qui retourne true si reussi en mode "no_error = checksJoinIfChannelExists(c, chan_ptr, key);" A voir avec les messages d'erreur ?
 		{
 			if (checkLimit(chan_ptr))
-				;//ERR_CHANNELISFULL (471)
+			{
+				c->set_bufferOut(Replies::ERR_CHANNELISFULL(server.get_name(), c->get_nickname(), chan)); // ERR_CHANNELISFULL (471)
+				server.switchPollOut(c->get_socketFd());
+			}
 			else if (chan_ptr->get_inviteOnly() && !chan_ptr->isInvited(c))
-				;//ERR_INVITEONLYCHAN(473)
+			{
+				c->set_bufferOut(Replies::ERR_INVITEONLYCHAN(server.get_name(), c->get_nickname(), chan)); // ERR_INVITEONLYCHAN (473)
+				server.switchPollOut(c->get_socketFd());
+			}
 			else if (checkChannelKey(chan_ptr, key))
-				;//ERR_BADCHANNELKEY (475)
+			{
+				c->set_bufferOut(Replies::ERR_BADCHANNELKEY(server.get_name(), c->get_nickname(), chan)); // ERR_BADCHANNELKEY (475)
+				server.switchPollOut(c->get_socketFd());
+			}
 			else
 				no_error = true;
 		}
 		else if (chan_ptr == NULL)//idem avec "no_error = checksJoinIfChannelDoesNotExists(c, chan_ptr, key);" ? A voir avec les messages d'erreur ?
 		{
 			if (!isValidChannelName(chan))
-				;//ERR_NOSUCHCHANNEL (403)
+			{
+				c->set_bufferOut(Replies::ERR_NOSUCHCHANNEL(server.get_name(), c->get_nickname(), chan)); // ERR_NOSUCHCHANNEL (403)
+				server.switchPollOut(c->get_socketFd());
+			}
 			else
 			{
 				chan_ptr = server.createChannel(chan);
@@ -286,7 +456,7 @@ void CommandHandler::handleJOIN(Server &server, Client *c, const Message &msg)
 		}
 	}
 
-//Questions : 
+//Questions :
 //Si + de clefs que de channels => clefs supplementaires ignorees
 //Comment gérer les messages d'erreur non bloquants => bool no_error
 	return;
@@ -294,7 +464,7 @@ void CommandHandler::handleJOIN(Server &server, Client *c, const Message &msg)
 
 void	CommandHandler::handlePRIVMSG(Server &server, Client *c, const Message &msg)
 {
-	//Le check du client non null à faire avant non ? 
+	//Le check du client non null à faire avant non ?
 	int								t = 0;//  0 = erreur, 1 = chan, 2 = client, 3 = deja vu
 	std::string						lst_target;
 	std::string						target;
@@ -307,15 +477,17 @@ void	CommandHandler::handlePRIVMSG(Server &server, Client *c, const Message &msg
 
 	if	(msg.params.empty() || msg.params[0].empty())
 	{
-		;//ERR_NORECIPIENT(411)
+		c->set_bufferOut(Replies::ERR_NORECIPIENT(server.get_name(), c->get_nickname())); // ERR_NORECIPIENT (411)
+		server.switchPollOut(c->get_socketFd());
 		return;
 	}
 	if (msg.params.size() < 2 || msg.params[1].empty())
 	{
-		;//ERR_NOTEXTTOSEND(412)
+		c->set_bufferOut(Replies::ERR_NOTEXTTOSEND(server.get_name(), c->get_nickname())); // ERR_NOTEXTTOSEND (412)
+		server.switchPollOut(c->get_socketFd());
 		return;
 	}
-	
+
 //checker les param (au moins 2) et si 2, !param[1].empty()
 	lst_target = msg.params[0];
 	while (!lst_target.empty() && pos != std::string::npos)//gerder la condition pos ?
@@ -340,12 +512,14 @@ void	CommandHandler::handlePRIVMSG(Server &server, Client *c, const Message &msg
 			chan_target = server.get_channel(target);
 			if (chan_target == NULL)
 			{
-				;//ERR_NOSUCHNICK (401)/ERR_NOSUCHCHANNEL(403) => perso je prefere 403
+				c->set_bufferOut(Replies::ERR_NOSUCHCHANNEL(server.get_name(), c->get_nickname(), target)); // ERR_NOSUCHCHANNEL (403)
+				server.switchPollOut(c->get_socketFd());
 				break;
 			}
 			if (!isMemberChannel(c, chan_target))
 			{
-				;//ERR_CANNOTSENDTOCHAN (404)
+				c->set_bufferOut(Replies::ERR_CANNOTSENDTOCHAN(server.get_name(), c->get_nickname(), target)); // ERR_CANNOTSENDTOCHAN (404)
+				server.switchPollOut(c->get_socketFd());
 				break;
 			}
 
@@ -367,7 +541,8 @@ void	CommandHandler::handlePRIVMSG(Server &server, Client *c, const Message &msg
 			user_target = server.get_client(target);
 			if (user_target == NULL || !user_target->get_registered())
 			{
-				;//ERR_NOSUCHNICK (401)
+				c->set_bufferOut(Replies::ERR_NOSUCHNICK(server.get_name(), c->get_nickname(), target)); // ERR_NOSUCHNICK (401)
+				server.switchPollOut(c->get_socketFd());
 				break;
 			}
 			;//envoyer le param[1] a la target
@@ -397,18 +572,20 @@ void	CommandHandler::handleKICK(Server &server, Client *c, const Message &msg)//
 //Params necessaires (#chan list_user & raison(opt))
 	if (msg.params.empty() || msg.params.size() < 2)
 	{
-		;//ERR_NEEDMOREPARAMS(461)
+		c->set_bufferOut(Replies::ERR_NEEDMOREPARAMS(server.get_name(), c->get_nickname())); // ERR_NEEDMOREPARAMS (461)
+		server.switchPollOut(c->get_socketFd());
 		return;
 	}
 	chan_name = msg.params[0];
 	lst_members = msg.params[1];
 	if (msg.params.size() > 2)
 		reason = msg.params[2];
-//channel existant 
+//channel existant
 	chan = server.get_channel(chan_name);
 	if (!chan)
 	{
-		;//ERR_NOSUCHCHANNEL (403)
+		c->set_bufferOut(Replies::ERR_NOSUCHCHANNEL(server.get_name(), c->get_nickname(), chan_name)); // ERR_NOSUCHCHANNEL (403)
+		server.switchPollOut(c->get_socketFd());
 		return;
 	}
 	while (!lst_members.empty() && pos != std::string::npos)//virer condition pos ?
@@ -421,11 +598,20 @@ void	CommandHandler::handleKICK(Server &server, Client *c, const Message &msg)//
 			lst_members.clear();
 		user_target = server.get_client(target);
 		if (!isMemberChannel(c, chan))//checker avec la normalisation du client name
-			;//ERR_NOTONCHANNEL (442)
+		{
+			c->set_bufferOut(Replies::ERR_NOTONCHANNEL(server.get_name(), c->get_nickname(), chan_name)); // ERR_NOTONCHANNEL (442)
+			server.switchPollOut(c->get_socketFd());
+		}
 		else if (!chan->isOperator(c))
-			;//ERR_CHANOPRIVSNEEDED (482)
+		{
+			c->set_bufferOut(Replies::ERR_CHANOPRIVSNEEDED(server.get_name(), c->get_nickname(), chan_name)); // ERR_CHANOPRIVSNEEDED (482)
+			server.switchPollOut(c->get_socketFd());
+		}
 		else if (!user_target || !user_target->get_registered() || !isMemberChannel(user_target, chan))
-			;//ERR_USERNOTINCHANNEL (441)
+		{
+			c->set_bufferOut(Replies::ERR_USERNOTINCHANNEL(server.get_name(), c->get_nickname(), target, chan_name)); // ERR_USERNOTINCHANNEL (441)
+			server.switchPollOut(c->get_socketFd());
+		}
 		else
 		{
 			;//message de kick
@@ -448,15 +634,30 @@ void	CommandHandler::handleINVITE(Server &server, Client *c, const Message &msg)
 	invited_guy = server.get_client(msg.params[0]);
 	chan = server.get_channel(msg.params[1]);
 	if (chan == NULL)
-		;//ERR_NOSUCHCHANNEL (403)
+	{
+		c->set_bufferOut(Replies::ERR_NOSUCHCHANNEL(server.get_name(), c->get_nickname(), msg.params[1])); // ERR_NOSUCHCHANNEL (403)
+		server.switchPollOut(c->get_socketFd());
+	}
 	else if (!isMemberChannel(c, chan))
-		;//ERR_NOTONCHANNEL (442)
+	{
+		c->set_bufferOut(Replies::ERR_NOTONCHANNEL(server.get_name(), c->get_nickname(), msg.params[1])); // ERR_NOTONCHANNEL (442)
+		server.switchPollOut(c->get_socketFd());
+	}
 	else if (chan->get_inviteOnly() && !chan->isOperator(c))
-		;//ERR_CHANOPRIVSNEEDED (482)
+	{
+		c->set_bufferOut(Replies::ERR_CHANOPRIVSNEEDED(server.get_name(), c->get_nickname(), msg.params[1])); // ERR_CHANOPRIVSNEEDED (482)
+		server.switchPollOut(c->get_socketFd());
+	}
 	else if (invited_guy == NULL || !invited_guy->get_registered())
-		;//ERR_NOSUCHNICK(401)
+	{
+		c->set_bufferOut(Replies::ERR_NOSUCHNICK(server.get_name(), c->get_nickname(), msg.params[0])); // ERR_NOSUCHNICK (401)
+		server.switchPollOut(c->get_socketFd());
+	}
 	else if (isMemberChannel(invited_guy, chan))
-		;//ERR_USERONCHANNEL(443)
+	{
+		c->set_bufferOut(Replies::ERR_USERONCHANNEL(server.get_name(), c->get_nickname(), msg.params[0], msg.params[1])); // ERR_USERONCHANNEL (443)
+		server.switchPollOut(c->get_socketFd());
+	}
 	else
 	{
 		;//RPL_INVITING (341) a c
@@ -466,31 +667,41 @@ void	CommandHandler::handleINVITE(Server &server, Client *c, const Message &msg)
 	return;
 }
 
-void	CommandHandler::handleTOPIC(Server &server, Client *c, const Message &msg)//chan [nouveau topic] 
+void	CommandHandler::handleTOPIC(Server &server, Client *c, const Message &msg)//chan [nouveau topic]
 {
 	Channel		*chan;
 	std::string	topic;
 
 	if (msg.params.empty() || msg.params[0].empty())
 	{
-		;//ERR_NEEDMOREPARAMS(461)
+		c->set_bufferOut(Replies::ERR_NEEDMOREPARAMS(server.get_name(), c->get_nickname())); // ERR_NEEDMOREPARAMS (461)
+		server.switchPollOut(c->get_socketFd());
 		return;
 	}
 	chan = server.get_channel(msg.params[0]);
 	if (chan == NULL)
-		;//ERR_NOSUCHCHANNEL (403)
+	{
+		c->set_bufferOut(Replies::ERR_NOSUCHCHANNEL(server.get_name(), c->get_nickname(), msg.params[0])); // ERR_NOSUCHCHANNEL (403)
+		server.switchPollOut(c->get_socketFd());
+	}
 	else if (!isMemberChannel(c, chan))
-		;//ERR_NOTONCHANNEL (442)
+	{
+		c->set_bufferOut(Replies::ERR_NOTONCHANNEL(server.get_name(), c->get_nickname(), msg.params[0])); // ERR_NOTONCHANNEL (442)
+		server.switchPollOut(c->get_socketFd());
+	}
 	else if (msg.params.size() == 1)
 	{
 		topic = chan->get_topic();
 		if (topic.empty())
-			;//RPL_NOTOPIC (331)
+			c->set_bufferOut(Replies::RPL_NOTOPIC(server.get_name(), c->get_nickname(), msg.params[0])); // RPL_NOTOPIC (331)
 		else
-			;//RPL_TOPIC (332)
+			c->set_bufferOut(Replies::RPL_TOPIC(server.get_name(), c->get_nickname(), msg.params[0], topic)); // RPL_TOPIC (332)
 	}
 	else if (chan->get_topicProtected() && !chan->isOperator(c))
-		;//ERR_CHANOPRIVSNEEDED (482)
+	{
+		c->set_bufferOut(Replies::ERR_CHANOPRIVSNEEDED(server.get_name(), c->get_nickname(), msg.params[0])); // ERR_CHANOPRIVSNEEDED (482)
+		server.switchPollOut(c->get_socketFd());
+	}
 	else
 	{
 		chan->set_topic(msg.params[1], c);
@@ -527,9 +738,15 @@ void	CommandHandler::handlePART(Server &server, Client *c, const Message &msg)//
 			lst_chan.clear();
 		chan_ptr = server.get_channel(chan);
 		if (chan_ptr == NULL)
-			;//ERR_NOSUCHCHANNEL (403)
+		{
+			c->set_bufferOut(Replies::ERR_NOSUCHCHANNEL(server.get_name(), c->get_nickname(), chan)); // ERR_NOSUCHCHANNEL (403)
+			server.switchPollOut(c->get_socketFd());
+		}
 		else if (!isMemberChannel(c, chan_ptr))
-			;//ERR_NOTONCHANNEL (442)
+		{
+			c->set_bufferOut(Replies::ERR_NOTONCHANNEL(server.get_name(), c->get_nickname(), chan)); // ERR_NOTONCHANNEL (442)
+			server.switchPollOut(c->get_socketFd());
+		}
 		else
 		{
 			;//broadcast de la reponse de PART => "<c au bon format> <chan> :raison"
@@ -539,7 +756,7 @@ void	CommandHandler::handlePART(Server &server, Client *c, const Message &msg)//
 	return;
 }
 
-void	CommandHandler::namesReply(Server &server, Client *c, Channel *chan)//A voir s'il faut le message du JOIN aussi pour Nayel 
+void	CommandHandler::namesReply(Server &server, Client *c, Channel *chan)//A voir s'il faut le message du JOIN aussi pour Nayel
 {
 	std::string						lst_names;
 	std::set<Client *>				members = chan->get_members();
@@ -558,11 +775,14 @@ void	CommandHandler::namesReply(Server &server, Client *c, Channel *chan)//A voi
 	}
 	;//envoyer a c RPL_NAMREPLY (353) avec lst_names comme tail, le symbole du chan a priori ce sera tj = pour nous
 	;//envoyer a c RPL_ENDOFNAMES (366)
+	c->set_bufferOut(Replies::RPL_NAMREPLY(server.get_name(), c->get_nickname(), chan->get_name(), lst_names)); // RPL_NAMREPLY (353)
+	c->set_bufferOut(Replies::RPL_ENDOFNAMES(server.get_name(), c->get_nickname(), chan->get_name())); // RPL_ENDOFNAMES (366)
+	server.switchPollOut(c->get_socketFd());
 
 	return;
 }
 
-void	handleMODE(Server &server, Client *c, const Message &msg)//target (chan) [modestring mode arg] => ex: #Tagada +o Pouet 
+void	CommandHandler::handleMODE(Server &server, Client *c, const Message &msg)//target (chan) [modestring mode arg] => ex: #Tagada +o Pouet
 {
 	//check que le chan existe (params[0]) => ;//ERR_NOSUCHCHANNEL (403)
 	//check si params[1] n'existe pas => ;//RPL_CHANNELMODEIS (324)
@@ -586,9 +806,9 @@ void	handleMODE(Server &server, Client *c, const Message &msg)//target (chan) [m
 	//		- retire member des operateurs si bien l4un d4entre eux et envoie message si change;ent a eu lieu
 	//	- dans les deux cas continuer silencieusement (dc pas d'erreur ni de reponse juste on termine) sans ajouter ou retirer le status si est deja ou n'est deja pas operator
 	//k (key) => B ? ou C ?
-	//	- + newkey 
+	//	- + newkey
 	//		- si key deja set => ;//ERR_KEYSET (467)
-	//		- check newkey valable => ;//ERR_INVALIDMODEPARAM (696) ou ERR_INVALIDKEY (525) 
+	//		- check newkey valable => ;//ERR_INVALIDMODEPARAM (696) ou ERR_INVALIDKEY (525)
 	//		- chan->set_key(newkey);
 	//	- - key OU -
 	//		- chan->set_key("");

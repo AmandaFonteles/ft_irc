@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: afontele <afontele@student.42.fr>          +#+  +:+       +#+        */
+/*   By: dnayel <dnayel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 21:54:11 by afontele          #+#    #+#             */
-/*   Updated: 2026/05/14 15:19:09 by afontele         ###   ########.fr       */
+/*   Updated: 2026/05/19 14:48:38 by dnayel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,9 +43,9 @@ private:
 	std::map<std::string, Channel *> _channels; //map of pointers
 	std::map<int, Client *>	_clients;
 	static bool			_running;
-	
+
 	Server();
-public:	
+public:
 	Server(const std::string &port, const std::string &password);
 	// Server(Server const &other);
 	// Server	&operator=(Server const &other);
@@ -53,7 +53,7 @@ public:
 
 	//Signal method
 	static void	signalHandler(int sig);
-	
+
 	//Server methods
 	bool	ServerInit();
 	void	ServerRun();
@@ -73,6 +73,10 @@ public:
 	Client				*get_client(std::string const nickname);//retourne NULL si pas trouve
 	static std::string	lowerName(std::string const name);
 	void				removeClientFromChannel(Client *c, Channel *chan);
+
+	// Nayel
+	std::string			get_name() const;
+	std::string			get_password() const;
 };
 
 #endif

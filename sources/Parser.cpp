@@ -6,7 +6,7 @@
 /*   By: dnayel <dnayel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/29 12:28:04 by dnayel            #+#    #+#             */
-/*   Updated: 2026/05/02 15:34:33 by dnayel           ###   ########.fr       */
+/*   Updated: 2026/05/19 12:01:44 by dnayel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,7 +23,7 @@ std::string Parser::toUpper(const std::string &str)
 {
 	std::string result = str;
 	for (std::string::size_type i = 0; i < result.size(); i++)
-		result[i] = std::toupper(result[i]);
+		result[i] = static_cast<char>(std::toupper(result[i]));
 	return result;
 }
 
@@ -34,9 +34,12 @@ std::vector<std::string>	Parser::extractLines(std::string &buffer)
 
 	while ((pos = buffer.find('\n')) != std::string::npos) // while \n in buffer
 	{
-		lines.push_back(buffer.substr(0, pos)); // push line until \n in vector
-		buffer.erase(0, pos + 1); // erase line + \n from buffer
-		// cas particulier et limites ? (lignes vide, \n find de buffer, etc...)
+		std::string line = buffer.substr(0, pos); // extract line until \n
+		if (!line.empty() && line[line.size() - 1] == '\r') // remove \r if present (CRLF)
+			line.erase(line.size() - 1);
+		if (line.size() > 510) // IRC msgs max length = 512
+			line.resize(510);
+		lines.push_back(line);
 	}
 	return lines;
 }
@@ -90,6 +93,7 @@ Message Parser::parseLine(const std::string &line)
 		if (line[pos] == ':') // Trailing
 		{
 			msg.trailing = line.substr(pos + 1); // Trailing is everything after ':'
+			msg.params.push_back(line.substr(pos + 1)); // Trailing is also considered a param for convenience
 			msg.hasTrailing = true;
 			break; // Trailing is always last, we can stop parsing
 		}
