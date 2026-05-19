@@ -70,7 +70,8 @@ public:
 	bool						isInvited(Client const *c) const;
 	bool						isFull() const;
 	bool						hasKey() const;
-	size_t						nbMembers() const;//utile ? 
+	size_t						nbMembers() const;
+	bool						isValidKey(std::string newkey);//1->23char, ascii vsibiles, pas d'espaces, \r\n\t\v\n\0 interdits, pas de ','
 };
 
 

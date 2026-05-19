@@ -224,3 +224,9 @@ bool	Channel::isKey(std::string const key) const
 		return (true);
 	return (false);
 }
+
+bool	Channel::isValidKey(std::string newkey)//1->23char, ascii vsibiles, pas d'espaces, \r\n\t\v\n\0 interdits, pas de ','
+{
+	//TODOOOOOOOO
+	return (false);
+}
