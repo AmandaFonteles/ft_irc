@@ -225,8 +225,19 @@ bool	Channel::isKey(std::string const key) const
 	return (false);
 }
 
-bool	Channel::isValidKey(std::string newkey)//1->23char, ascii vsibiles, pas d'espaces, \r\n\t\v\n\0 interdits, pas de ','
+bool	Channel::isValidKey(std::string newkey) const//1->23char, ascii vsibiles, pas d'espaces, \r\n\t\v\n\0 interdits, pas de ','
 {
-	//TODOOOOOOOO
-	return (false);
+	if (newkey.empty())
+		return (false);
+	size_t key_len = newkey.size();
+	if (key_len > 23)
+		return (false);
+	for (size_t i = 0; i < key_len ; i++)
+	{
+		if (newkey[i] > 127 || !isprint(newkey[i]))
+			return (false);
+	}
+	if (newkey.find_first_of(" ,") != std::string::npos)
+		return (false);
+	return (true);
 }
