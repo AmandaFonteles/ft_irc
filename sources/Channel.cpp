@@ -234,7 +234,7 @@ bool	Channel::isValidKey(std::string newkey) const//1->23char, ascii vsibiles, p
 		return (false);
 	for (size_t i = 0; i < key_len ; i++)
 	{
-		if (newkey[i] > 127 || !isprint(newkey[i]))
+		if (!isprint(newkey[i]))
 			return (false);
 	}
 	if (newkey.find_first_of(" ,") != std::string::npos)

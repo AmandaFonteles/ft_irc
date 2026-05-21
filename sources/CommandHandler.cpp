@@ -349,7 +349,7 @@ std::cout << "[DEBUG] allowChar string = \"" << allowedChar << "\""<< std::endl;
 		return (false);
 	if (nickname.find_first_not_of(allowedChar) != std::string::npos)
 		return (false);
-	if (nickname.find_first_of("0123456789-" == 0))//nickname[0] != 0123456789-#: (# et : ne sont de toutes façons pas autorises)
+	if (nickname.find_first_of("0123456789-") == 0)//nickname[0] != 0123456789-#: (# et : ne sont de toutes façons pas autorises)
 		return (false);
 	return (true);
 }
