@@ -6,7 +6,7 @@
 /*   By: dnayel <dnayel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/05 15:55:06 by dnayel            #+#    #+#             */
-/*   Updated: 2026/05/19 10:56:52 by dnayel           ###   ########.fr       */
+/*   Updated: 2026/05/21 20:00:16 by dnayel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,7 +34,6 @@ class CommandHandler
 		void handleNICK(Server &server, Client *client, const Message &msg);
 		void handleUSER(Server &server, Client *client, const Message &msg);
 		void handlePING(Server &server, Client *client, const Message &msg);
-		void handlePONG(Server &server, Client *client, const Message &msg);
 		void handleQUIT(Server &server, Client *client, const Message &msg);
 
 		void registerClient(Server &server, Client *client);

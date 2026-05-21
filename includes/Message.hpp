@@ -6,12 +6,12 @@
 /*   By: dnayel <dnayel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/02 17:09:04 by dnayel            #+#    #+#             */
-/*   Updated: 2026/05/19 12:41:54 by dnayel           ###   ########.fr       */
+/*   Updated: 2026/05/21 17:27:17 by dnayel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef MESSAGE_HPP
-#define MESSAGE_HPP
+# define MESSAGE_HPP
 
 # include <string>
 # include <vector>

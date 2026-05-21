@@ -6,12 +6,12 @@
 /*   By: dnayel <dnayel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/29 12:27:34 by dnayel            #+#    #+#             */
-/*   Updated: 2026/05/02 15:14:54 by dnayel           ###   ########.fr       */
+/*   Updated: 2026/05/21 17:27:22 by dnayel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef PARSER_HPP
-#define PARSER_HPP
+# define PARSER_HPP
 
 # include <string>
 # include <vector>
