@@ -23,6 +23,8 @@ SRCS		:= $(addprefix $(SRCS_DIR)/, \
 				CommandHandler.cpp \
 				Message.cpp \
 				Parser.cpp \
+				Replies.cpp \
+				Server_channel.cpp \
 				Server.cpp \
 				main.cpp \
 				)

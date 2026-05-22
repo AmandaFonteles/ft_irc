@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server_channel.cpp                                 :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
+/*   By: dnayel <dnayel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/09 10:40:24 by aibonade          #+#    #+#             */
-/*   Updated: 2026/05/14 18:46:27 by aibonade         ###   ########.fr       */
+/*   Updated: 2026/05/22 11:46:58 by dnayel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -78,6 +78,17 @@ std::string	Server::lowerName(std::string const name)
 		str[i] = std::tolower(str[i]);
 		i++;
 	}
-std::cout << "[DEBUG] name (" << name << ") normalized = " << str << std::endl;//On l'enlevera en temps voulu, laisse la collee au bord :) J'aimerais checker le # notamment 
+std::cout << "[DEBUG] name (" << name << ") normalized = " << str << std::endl;//On l'enlevera en temps voulu, laisse la collee au bord :) J'aimerais checker le # notamment
 	return (str);
+}
+
+//////// NAYEL GETTERS ////
+std::string	Server::get_name() const
+{
+	return ("ft_irc");
+}
+
+std::string	Server::get_password() const
+{
+	return (_password);
 }

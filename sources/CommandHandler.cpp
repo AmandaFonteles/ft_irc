@@ -6,7 +6,7 @@
 /*   By: dnayel <dnayel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/05 15:55:21 by dnayel            #+#    #+#             */
-/*   Updated: 2026/05/22 11:25:51 by dnayel           ###   ########.fr       */
+/*   Updated: 2026/05/22 11:33:22 by dnayel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -383,8 +383,8 @@ void CommandHandler::handleJOIN(Server &server, Client *c, const Message &msg)
 //si msg->param[0] = "0"
 	if (lst_chan == "0")//JOIN 0 == PART chan1,chan2...
 	{
-		;// => on cree un message part avec prefix = ???(celui du msg actuel ?), command = "PART", params = c->get_channels() (donc sous forme de string), trailing ???, has trailing ????
-		;//=> On appelle Part avec le nouveau message
+		//;// => on cree un message part avec prefix = ???(celui du msg actuel ?), command = "PART", params = c->get_channels() (donc sous forme de string), trailing ???, has trailing ????
+		//;//=> On appelle Part avec le nouveau message
 		return;
 	}
 

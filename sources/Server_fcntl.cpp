@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   Server.cpp                                         :+:      :+:    :+:   */
+/*   Server_fcntl.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: afontele <afontele@student.42.fr>          +#+  +:+       +#+        */
+/*   By: dnayel <dnayel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 21:54:23 by afontele          #+#    #+#             */
-/*   Updated: 2026/05/16 17:10:22 by afontele         ###   ########.fr       */
+/*   Updated: 2026/05/22 11:46:44 by dnayel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,10 +22,10 @@ Server::Server(const std::string &port, const std::string &password) : _password
 
 	// - Extract the stirng from the stream into the int
 	extractInt >> portNb;
-	
+
 	// 1. Check for int extraction errors or leftover chars
 	if (extractInt.fail() || !extractInt.eof())
-		throw std::invalid_argument("Invalid port format.");
+		throw std::invalid_argument("Invalid port format");
 
 	// 2. Check available port range
 	if (portNb < 1024 || portNb > 65535)
@@ -42,7 +42,7 @@ Server::Server(const std::string &port, const std::string &password) : _password
 Server::~Server() {
 	// 1. close server socket
 	close(_serverSocket);
-	
+
 	// 2. loops to delete _clients and _channels
 	for (std::map<int,Client *>::iterator it = _clients.begin(); it != _clients.end(); it++) {
 		close(it->first);
@@ -50,18 +50,18 @@ Server::~Server() {
 	}
 	for (std::map<std::string, Channel *>::iterator it = _channels.begin(); it != _channels.end(); it++)
 		delete it->second;
-		
+
 	// 3. Empty maps _clients and _channels
 	_clients.clear();
 	_channels.clear();
-	
+
 	std::cout << "[DEBUG] Server shutdown." << std::endl;
 }
 
 //Signal Handler
 void	Server::signalHandler(int sig) {
 	(void)sig;
-	
+
 	_running = false;
 
 	//TEST DEBUG - erase it later
@@ -75,12 +75,12 @@ bool	Server::ServerInit() {
 	// - SOCK_STREAM = Provides  sequenced,  reliable,  two-way,  connection-based byte streams.
 	// - IPPROTO_TCP = set TCP as the transport protocol.
 	// ! Tried using the OR and SOCK_NONBLOCK, but it's not C++98 compliant (apparently)
-	_serverSocket = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, IPPROTO_TCP); //If error errno is set
+	_serverSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP); //If error errno is set
 	if (_serverSocket < 0) { //handle error (cerr, exception...)
 		std::cerr << "Error: Fail to create socket." << std::endl;
 		return (false);
 	}
-		
+
     // 2. Change sock "settings" allowing port reuse with setsockopt() - preventing the "Address already in use" error.
 	// - Port reuse is necessary because even if you stop to use a port (stop to run the program) the OS will wait a couple min to allow you to use this port again (run the program again)
 	// - If you try to run ./ircserv again immediately, the bind() function will fail and yell at you: "Address already in use".
@@ -90,17 +90,17 @@ bool	Server::ServerInit() {
 		std::cerr << "Error: Failed to set socket to allow port reuse." << std::endl;
 		return (false);
 	}
-	
-	
+
+
     // 3. Make the socket non-blocking with fcntl() //chercher non bloquant sur discord
 	// ? wHEN THE PROJECT SAYS WE CAN'T USE FCNTL IS JUST FOR SEND AND RECEIAVING MSG? OR HERE AS WELL
 	// ? change to select and won't need fcntl ????
-	// if (fcntl(_serverSocket, F_SETFL, O_NONBLOCK) < 0) {
-	// 	close(_serverSocket);
-	// 	std::cerr << "Error: fcntl failed." << std::endl;
-	// 	return (false);
-	// }
-	
+	if (fcntl(_serverSocket, F_SETFL, O_NONBLOCK) < 0) {
+		close(_serverSocket);
+		std::cerr << "Error: fcntl failed." << std::endl;
+		return (false);
+	}
+
     // 4. Bind the socket to _port with bind()
 	// - Struct specific for IP (will be casted to a generic struct sockaddr to fit bind())
 	struct sockaddr_in	serverAddr;
@@ -118,14 +118,14 @@ bool	Server::ServerInit() {
 		std::cerr << "Error: Failed to bind socket." << std::endl;
 		return (false);
 	}
-	
+
     // 5. Start listening with listen()
 	if (listen(_serverSocket, SOMAXCONN) < 0) {
 		close(_serverSocket);
 		std::cerr << "Error: Failed to listen for connections" << std::endl;
 		return (false);
 	}
-	
+
     // 6. Add _serverSocket to _pollFds with POLLIN event
 	// - Struct pollfd is defined in poll.h
 	// - POLLIN alerts when data is ready to recv() on the socket.
@@ -156,7 +156,7 @@ void	Server::ServerRun() {
 			std::cerr << "Error: Poll" << std::endl;
 			break ;
 		}
-		
+
         // 2. Loop through _pollFds to find which fd triggered an event
 		// - Since poll() returns how many fds flagged and not which ones, this loop is needed
 		for (int i = static_cast<int>(_pollFds.size() - 1); i >= 0; i--) {
@@ -175,7 +175,7 @@ void	Server::ServerRun() {
 			if (_pollFds[i].revents & POLLOUT) {
 				sendMessage(_pollFds[i].fd);
 			}
-		}        
+		}
 	}
 }
 
@@ -195,11 +195,11 @@ void	Server::acceptNewClient() {
 	}
 
 	// 2. Make the NEW client socket non-blocking //use socket() with flag
-	// if (fcntl(clientSocket, F_SETFL, O_NONBLOCK) < 0) {
-	// 	std::cerr << "Error: fcntl failed." << std::endl;
-	// 	return ;
-	// }
-	
+	if (fcntl(clientSocket, F_SETFL, O_NONBLOCK) < 0) {
+		std::cerr << "Error: fcntl failed." << std::endl;
+		return ;
+	}
+
 	// 3. Add the new client to our poll() vector
 	// - Add the new client to client map also
 	struct pollfd	clientpfd;
@@ -208,7 +208,7 @@ void	Server::acceptNewClient() {
 		std::cerr << "Error: New failed." << std::endl;
 		return ;
 	}
-	
+
 	_clients[clientSocket] = newClient;
 	clientpfd.fd = clientSocket;
 	clientpfd.events = POLLIN;
@@ -222,25 +222,20 @@ void	Server::acceptNewClient() {
 void	Server::receiveClientData(int clientFd) {
 	// - Create a buffer to save temporarely the data sent from client
 	char	buff[1024];
-	
+
 	// - Clear the buffer from garbage data
 	std::memset(buff, 0, sizeof(buff));
 
 	// 1. Read data from the client
 	// ? recv(clientFd, &buff, ...)
-	// - Use MSG_DONTWAIT so the socket don't block this specific operation
-	ssize_t	bytesRead = recv(clientFd, buff, sizeof(buff) - 1, MSG_DONTWAIT);  //, 0);
+	ssize_t	bytesRead = recv(clientFd, buff, sizeof(buff) - 1, 0);
 
 	// - Error checking
 	if (bytesRead < 0) {
-		// - Check if MSG_DONTWAIT makes recv return early. This shouldn't cause error
-		if (errno == EAGAIN  || errno == EWOULDBLOCK) {
-			//continue ; //or create a function to everything inside else and call here
-		}
 		std::cerr << "Error: Server failed on receiving message from client FD: "<< clientFd << std::endl;
 		cleanClosure(clientFd);
 	}
-	
+
 	// 2. Clean clousure
 	else if (bytesRead == 0) {
 		//remove client from vector AND map
@@ -254,7 +249,7 @@ void	Server::receiveClientData(int clientFd) {
 			std::cerr << "Received data from unkwon client." << std::endl;
 			return ;
 		}
-		
+
 		std::string	msg = buff;
 		std::cout << "[DEBUG] Message received: " << msg << std::endl;
 		_clients[clientFd]->set_bufferIn(msg);
@@ -271,20 +266,20 @@ void	Server::cleanClosure(int clientFd) {
 	// 1. Safety check
 	if (_clients.find(clientFd) == _clients.end())
 		return ;
-		
+
 	// 2. Remove client from _channels
 	removeClientFromAllChannels(clientFd);
 
 	// 3. Remove channels from client (? do we need that? We will delete the client after anyway)
 	_clients[clientFd]->removeAllChannel();
-	
+
 	// 4. Close the socket
 	close(clientFd);
-	
+
 	// 5. Delete from map and erase its key
 	delete _clients[clientFd];
 	_clients.erase(clientFd);
-	
+
 	//6. Remove from _pollFds
 	for (size_t i = 0; i < _pollFds.size(); i++) {
 		if (_pollFds[i].fd == clientFd) {
@@ -314,21 +309,20 @@ void	Server::sendMessage(int clientFd) {
 		return ;
 	}
 	std::string	&msg = _clients[clientFd]->get_bufferOut();
-	
+
 	// ? Do we hve something to handle if bufferOut is empty? It shouldn't happen
 	if (msg.empty())
 		return ;
 
 	// 1. Use send() to send data to client
-	ssize_t	bytesSent = send(clientFd, msg.c_str(), msg.length(), MSG_DONTWAIT); //0);
-	
+	ssize_t	bytesSent = send(clientFd, msg.c_str(), msg.length(), 0);
+
 	// - Error checking
 	if (bytesSent < 0) {
-		// CHECK ERRNO ???
 		std::cerr << "Error: Server failed on sending message to client FD: "<< clientFd << std::endl;
 		cleanClosure(clientFd);
 	}
-	
+
 	// 2. Handle incomplete messages
 	else if (bytesSent < static_cast<ssize_t>(msg.length())) {
 		std::cout << "[DEBUG] Partial send. Sent " << bytesSent << " out of " << msg.length() << " bytes." << std::endl;
@@ -340,7 +334,7 @@ void	Server::sendMessage(int clientFd) {
 		// 2. Clean _bufferOut
 		// ? Ask Nayel how to handle the _buffers
 		msg.clear(); //msg.erase(0, bytesSent);
-		
+
 		// 3. Switch event back to POLLIN only
 		for (size_t i = 0; i < _pollFds.size(); i++) {
 			if (_pollFds[i].fd == clientFd) {
