@@ -6,7 +6,7 @@
 /*   By: dnayel <dnayel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 21:54:11 by afontele          #+#    #+#             */
-/*   Updated: 2026/05/19 14:48:38 by dnayel           ###   ########.fr       */
+/*   Updated: 2026/05/22 12:24:19 by dnayel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,6 +31,8 @@
 # include "Channel.hpp"
 # include "Client.hpp"
 # include "CommandHandler.hpp"
+# include "Parser.hpp" // requis pour receiveClientData() et sendMessage() pour parser les messages entrants et sortants
+# include "Replies.hpp" // QUIT_MSG dans removeClientFromAllChannels()
 
 class	Server {
 private:

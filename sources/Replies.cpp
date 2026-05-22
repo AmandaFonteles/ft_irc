@@ -6,11 +6,14 @@
 /*   By: dnayel <dnayel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/19 14:53:46 by dnayel            #+#    #+#             */
-/*   Updated: 2026/05/21 21:15:54 by dnayel           ###   ########.fr       */
+/*   Updated: 2026/05/22 12:19:41 by dnayel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/Replies.hpp"
+
+Replies::Replies() {}
+Replies::~Replies() {}
 
 /******************/
 /*Helper functions*/
@@ -249,7 +252,7 @@ std::string Replies::ERR_INVALIDMODEPARAM(const std::string &serverName, const s
 
 std::string Replies::PONG(const std::string &serverName, const std::string &token)
 {
-	return (":" + serverName + " PONG :" + token + "\r\n");
+	return (":" + serverName + " PONG " + serverName + " :" + token + "\r\n");
 }
 
 std::string Replies::NICK_CHANGE(const std::string &oldNick, const std::string &user, const std::string &host, const std::string &newNick)
@@ -264,7 +267,7 @@ std::string Replies::JOIN_MSG(const std::string &nick, const std::string &user, 
 
 std::string Replies::PART_MSG(const std::string &nick, const std::string &user, const std::string &host, const std::string &channel, const std::string &reason)
 {
-	std::string msg = ":" + nick + "!" + user + "@" + host + " PART :" + channel;
+	std::string msg = ":" + nick + "!" + user + "@" + host + " PART " + channel;
 	if (!reason.empty())
 		msg += " :" + reason;
 	msg += "\r\n";
@@ -313,7 +316,7 @@ std::string Replies::QUIT_MSG(const std::string &nick, const std::string &user, 
 
 std::string Replies::ERROR_MSG(const std::string &reason)
 {
-	return (":ft_irc ERROR :" + reason + "\r\n");
+	return ("ERROR :Closing Link: " + reason + "\r\n");
 }
 
 

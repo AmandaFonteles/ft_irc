@@ -6,19 +6,15 @@
 /*   By: dnayel <dnayel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/29 12:28:04 by dnayel            #+#    #+#             */
-/*   Updated: 2026/05/19 12:01:44 by dnayel           ###   ########.fr       */
+/*   Updated: 2026/05/22 12:32:46 by dnayel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/Parser.hpp"
 
-Parser::Parser()
-{
-}
+Parser::Parser() {}
+Parser::~Parser() {}
 
-Parser::~Parser()
-{
-}
 std::string Parser::toUpper(const std::string &str)
 {
 	std::string result = str;

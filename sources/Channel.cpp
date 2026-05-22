@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Channel.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: aibonade <aibonade@student.42.fr>          +#+  +:+       +#+        */
+/*   By: dnayel <dnayel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/28 14:54:05 by aibonade          #+#    #+#             */
-/*   Updated: 2026/05/12 17:05:18 by aibonade         ###   ########.fr       */
+/*   Updated: 2026/05/22 12:21:59 by dnayel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,7 +25,7 @@ Channel::Channel(std::string name):_name(name), _topic(""), _key(""), _limit(0),
 
 Channel::~Channel()	{ return; }
 
-Channel::Channel(Channel const &cpy):_name(cpy._name), _topic(cpy._topic), _members(cpy._members), _operators(cpy._operators), _invited(cpy._invited), _key(cpy._key), _limit(cpy._limit), _inviteOnly(cpy._inviteOnly), _topicProtected(cpy._inviteOnly)
+Channel::Channel(Channel const &cpy):_name(cpy._name), _topic(cpy._topic), _members(cpy._members), _operators(cpy._operators), _invited(cpy._invited), _key(cpy._key), _limit(cpy._limit), _inviteOnly(cpy._inviteOnly), _topicProtected(cpy._topicProtected)
 {
 	return;
 }
@@ -76,7 +76,7 @@ std::string	Channel::get_name() const
 
 std::string	Channel::get_topic() const
 {
-	return (this->_name);
+	return (this->_topic);
 }
 
 std::set<Client *>	Channel::get_members() const
@@ -127,7 +127,7 @@ bool	Channel::addMember(Client *newMember)
 	return (ret.second);
 }
 
-bool	Channel::removeMember(Client *member)//On peut aussi faire plus simplement cette fonction avec .erase(member), mais ca me paraissait plus sur comme ca, on maitrise mieux ce qu'il se passe je trouve... 
+bool	Channel::removeMember(Client *member)//On peut aussi faire plus simplement cette fonction avec .erase(member), mais ca me paraissait plus sur comme ca, on maitrise mieux ce qu'il se passe je trouve...
 {
 	std::set<Client *>::iterator	it;
 
