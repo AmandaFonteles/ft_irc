@@ -6,7 +6,7 @@
 /*   By: dnayel <dnayel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/05 15:55:06 by dnayel            #+#    #+#             */
-/*   Updated: 2026/05/21 20:00:16 by dnayel           ###   ########.fr       */
+/*   Updated: 2026/05/22 16:56:53 by dnayel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,6 +38,7 @@ class CommandHandler
 
 		void registerClient(Server &server, Client *client);
 
+		void broadcastToChannel(Server &server, Channel *chan, const std::string &msg, Client *except);
 	//Aileen
 	//Fonctions de test (tu peux les utiliser aussi hein, c'est juste pour que tu voies ce que j'ai ajoute)
 		bool	isMemberChannel(Client *c, Channel *chan);//check dans client et chan si membre du chan

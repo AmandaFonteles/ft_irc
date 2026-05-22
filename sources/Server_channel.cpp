@@ -6,7 +6,7 @@
 /*   By: dnayel <dnayel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/09 10:40:24 by aibonade          #+#    #+#             */
-/*   Updated: 2026/05/22 11:46:58 by dnayel           ###   ########.fr       */
+/*   Updated: 2026/05/22 18:06:40 by dnayel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,7 +31,7 @@ Channel	*Server::createChannel(std::string const name)
 	//je le mets dans _channels avec name en minuscule
 	_channels[lowerName(name)] = new Channel(name);
 	//je renvoie le pointeur
-	return (_channels[name]);
+	return (_channels[lowerName(name)]);
 }
 
 void	Server::deleteChannel(Channel *chan)

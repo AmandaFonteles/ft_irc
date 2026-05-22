@@ -6,7 +6,7 @@
 /*   By: dnayel <dnayel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/19 14:53:46 by dnayel            #+#    #+#             */
-/*   Updated: 2026/05/22 12:19:41 by dnayel           ###   ########.fr       */
+/*   Updated: 2026/05/22 16:23:15 by dnayel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -297,7 +297,7 @@ std::string Replies::TOPIC_MSG(const std::string &nick, const std::string &user,
 
 std::string Replies::MODE_MSG(const std::string &nick, const std::string &user, const std::string &host, const std::string &channel, const std::string &modeStr)
 {
-	return (":" + nick + "!" + user + "@" + host + " MODE " + channel + " :" + modeStr + "\r\n");
+	return (":" + nick + "!" + user + "@" + host + " MODE " + channel + " " + modeStr + "\r\n");
 }
 
 std::string Replies::PRIVMSG_MSG(const std::string &fromNick, const std::string &fromUser, const std::string &fromHost, const std::string &target, const std::string &text)

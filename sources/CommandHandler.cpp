@@ -6,7 +6,7 @@
 /*   By: dnayel <dnayel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/05 15:55:21 by dnayel            #+#    #+#             */
-/*   Updated: 2026/05/22 11:33:22 by dnayel           ###   ########.fr       */
+/*   Updated: 2026/05/22 18:24:14 by dnayel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,26 @@
 #include <cctype>
 #include <iostream>
 
+CommandHandler::CommandHandler() {}
+CommandHandler::~CommandHandler() {}
+
+void CommandHandler::broadcastToChannel(Server &server, Channel *chan, const std::string &msg, Client *except)
+{
+	std::set<Client *>				members = chan->get_members();
+	std::set<Client *>::iterator	it = members.begin();
+
+	while (it != members.end())
+	{
+		if (*it != except)
+		{
+			(*it)->set_bufferOut(msg);
+			server.switchPollOut((*it)->get_socketFd());
+		}
+		++it;
+	}
+
+}
+
 void CommandHandler::handleCommand(Server &server, Client *client, const Message &msg)
 {
 	if (msg.command.empty())
@@ -27,17 +47,32 @@ void CommandHandler::handleCommand(Server &server, Client *client, const Message
 	if (msg.command == "CAP") // Ignore first, modern clients send it and disconnect if ERR_
 		return;
 	if (msg.command == "PASS")
-		handlePASS(server, client, msg);
-	else if (msg.command == "NICK")
+		{
+			handlePASS(server, client, msg);
+			return;
+		}
+	if (msg.command == "NICK")
+	{
 		handleNICK(server, client, msg);
-	else if (msg.command == "USER")
-		handleUSER(server, client, msg);
-	else if (msg.command == "PING")
-		handlePING(server, client, msg);
-	else if (msg.command == "PONG")
 		return;
-	else if (msg.command == "QUIT")
+	}
+	if (msg.command == "USER")
+	{
+		handleUSER(server, client, msg);
+		return;
+	}
+	if (msg.command == "PING")
+	{
+		handlePING(server, client, msg);
+		return;
+	}
+	if (msg.command == "PONG")
+		return;
+	if (msg.command == "QUIT")
+	{
 		handleQUIT(server, client, msg);
+		return;
+	}
 
 // Registration check
 	if (!client->get_registered()) // CHECK comment la variable est appelée dans Client.hpp
@@ -415,7 +450,7 @@ void CommandHandler::handleJOIN(Server &server, Client *c, const Message &msg)
 		chan_ptr = server.get_channel(chan);
 		if (chan_ptr && !isMemberChannel(c, chan_ptr))//mettre ce qu'il y a dedans dans un bloc qui retourne true si reussi en mode "no_error = checksJoinIfChannelExists(c, chan_ptr, key);" A voir avec les messages d'erreur ?
 		{
-			if (checkLimit(chan_ptr))
+			if (!checkLimit(chan_ptr))
 			{
 				c->set_bufferOut(Replies::ERR_CHANNELISFULL(serverName, nickname, chan));//ERR_CHANNELISFULL (471)
 				server.switchPollOut(c->get_socketFd());
@@ -425,7 +460,7 @@ void CommandHandler::handleJOIN(Server &server, Client *c, const Message &msg)
 				c->set_bufferOut(Replies::ERR_INVITEONLYCHAN(serverName, nickname, chan));//ERR_INVITEONLYCHAN(473)
 				server.switchPollOut(c->get_socketFd());
 			}
-			else if (checkChannelKey(chan_ptr, key))
+			else if (!checkChannelKey(chan_ptr, key))
 			{
 				c->set_bufferOut(Replies::ERR_BADCHANNELKEY(serverName, nickname, chan));//ERR_BADCHANNELKEY (475)
 				server.switchPollOut(c->get_socketFd());
@@ -453,9 +488,18 @@ void CommandHandler::handleJOIN(Server &server, Client *c, const Message &msg)
 			chan_ptr->addMember(c);
 			chan_ptr->removeInvite(c);
 			c->addChannel(chan_ptr);
+
 	//	- Envoyer message a tous les membres (meme c) ":pouet!user@localhost JOIN #Tagada\r\n" avec pouet le nouveau membre et #Tagada le channel
+			broadcastToChannel(server, chan_ptr, Replies::JOIN_MSG(c->get_nickname(), c->get_username(), c->get_hostname(), chan), NULL);
+
 	//	- Envoyer messages a c :
 	//		- si topic du serveur != "" => RPL_TOPIC (332) (en gros => ":server 332 :On aime les fraises\r\n")
+			if (chan_ptr->get_topic().empty())
+				c->set_bufferOut(Replies::RPL_NOTOPIC(serverName, nickname, chan));//RPL_NOTOPIC (331)
+			else
+				c->set_bufferOut(Replies::RPL_TOPIC(serverName, nickname, chan, chan_ptr->get_topic()));//RPL_TOPIC (332)
+			server.switchPollOut(c->get_socketFd());
+
 			namesReply(server, c, chan_ptr);//ici on a RPL_NAMREPLY (353) & RPL_ENDOFNAMES (366) => idem, on a juste besoin de les renvoyer en numeric comme pour TOPIC
 			no_error = false;
 		}
@@ -533,17 +577,18 @@ void	CommandHandler::handlePRIVMSG(Server &server, Client *c, const Message &msg
 				old_targets.insert(Server::lowerName(target));
 				chan_members = chan_target->get_members();
 				it = chan_members.begin();
-				while (it != chan_members.end())
-				{
-					user_target = *it;
-					if (old_targets.find(Server::lowerName(user_target->get_nickname())) == old_targets.end() && user_target != c)
-					{
-						//;//envoyer le param[1] a la target
-						// broadcast ??
-						old_targets.insert(Server::lowerName(user_target->get_nickname()));
-					}
-					it++;
-				}
+				//while (it != chan_members.end())
+				//{
+				//	user_target = *it;
+				//	if (old_targets.find(Server::lowerName(user_target->get_nickname())) == old_targets.end() && user_target != c)
+				//	{
+				//		//;//envoyer le param[1] a la target
+				//		// broadcast ??
+				//		old_targets.insert(Server::lowerName(user_target->get_nickname()));
+				//	}
+				//	it++;
+				//}
+				broadcastToChannel(server, chan_target, Replies::PRIVMSG_MSG(nickname, c->get_username(), c->get_hostname(), target, msg.trailing), c);
 				break;
 			case 2:
 				user_target = checkClientExists(server, target);
@@ -630,7 +675,7 @@ void	CommandHandler::handleKICK(Server &server, Client *c, const Message &msg)//
 		}
 		else
 		{
-			//broadcast ? ;//message de kick
+			broadcastToChannel(server, chan, Replies::KICK_MSG(nickname, c->get_username(), c->get_hostname(), chan_name, target, reason), NULL);
 			server.removeClientFromChannel(user_target, chan);
 		}
 	}
@@ -735,6 +780,7 @@ void	CommandHandler::handleTOPIC(Server &server, Client *c, const Message &msg)/
 	{
 		chan->set_topic(msg.params[1], c);
 		//Broadcast ? ;//Topic a change (meme si on a mis le meme topic ou qu'on l'a clear) => ":<c au bon format> TOPIC <chan> :<new topic set>")
+		broadcastToChannel(server, chan, Replies::TOPIC_MSG(nickname, c->get_username(), c->get_hostname(), chanName, msg.trailing), NULL);
 	}
 	return;
 }
@@ -780,6 +826,7 @@ void	CommandHandler::handlePART(Server &server, Client *c, const Message &msg)//
 		else
 		{
 			//;//broadcast de la reponse de PART => "<c au bon format> <chan> :raison"
+			broadcastToChannel(server, chan_ptr, Replies::PART_MSG(nickname, c->get_username(), c->get_hostname(), chan, reason), NULL);
 			server.removeClientFromChannel(c, chan_ptr);
 		}
 	}
@@ -833,9 +880,9 @@ void	CommandHandler::handleMODE(Server &server, Client *c, const Message &msg)//
 		server.switchPollOut(c->get_socketFd());
 		return;
 	}
-	if (msg.params.size() < 2)
+	if (msg.params.size() < 2) // if no modestring, just return the current modes of the channel with RPL_CHANNELMODEIS (324)
 	{
-		c->set_bufferOut(Replies::RPL_CHANNELMODEIS(serverName, nickname, chanName, msg.params[1]));//RPL_CHANNELMODEIS (324) //msg.params[1] pour modestring tant qu'on les fait 1 par 1
+		c->set_bufferOut(Replies::RPL_CHANNELMODEIS(serverName, nickname, chanName, "itkol"));//RPL_CHANNELMODEIS (324)
 		server.switchPollOut(c->get_socketFd());
 		return;
 	}
@@ -876,12 +923,14 @@ void	CommandHandler::handleMODE(Server &server, Client *c, const Message &msg)//
 				return;
 			chan_ptr->set_inviteOnly(true, c);
 			//broadcast ;//message broadcast du changement => j'hesite soit on le met a chaque fois comme ici, soit on ne le fait qu'une fois apres le switch case, je te laisse voir le plus pratique pour toi Nayel
+			broadcastToChannel(server, chan_ptr, Replies::MODE_MSG(nickname, c->get_username(), c->get_hostname(), chanName, modestring), NULL);
 			break;
 		case 1://-i
 			if (!chan_ptr->get_inviteOnly())
 				return;
 			chan_ptr->set_inviteOnly(false, c);
 			//broadcast ;//message broadcast du changement
+			broadcastToChannel(server, chan_ptr, Replies::MODE_MSG(nickname, c->get_username(), c->get_hostname(), chanName, modestring), NULL);
 			break;
 	//si t (+ ou -) (topic protected) => D ?
 	//	- + => chan->set_topicProtected(true);
@@ -891,12 +940,14 @@ void	CommandHandler::handleMODE(Server &server, Client *c, const Message &msg)//
 				return;
 			chan_ptr->set_topicProtected(true, c);
 			//broadcast ;//message broadcast du changement
+			broadcastToChannel(server, chan_ptr, Replies::MODE_MSG(nickname, c->get_username(), c->get_hostname(), chanName, modestring), NULL);
 			break;
 		case 3://-t
 			if (!chan_ptr->get_topicProtected())
 				return;
 			chan_ptr->set_topicProtected(false, c);
 			//broadcast ;//message broadcast du changement
+			broadcastToChannel(server, chan_ptr, Replies::MODE_MSG(nickname, c->get_username(), c->get_hostname(), chanName, modestring), NULL);
 			break;
 	//si l (+ ou -) (limit) => +l 10 ou -l => C ? => ignore la commande si pas de param
 	//	- + nb => set_limit(nb)
@@ -916,12 +967,14 @@ void	CommandHandler::handleMODE(Server &server, Client *c, const Message &msg)//
 				return;
 			chan_ptr->set_limit(nb_l, c);
 			//broadcast ;//message broadcast du changement
+				broadcastToChannel(server, chan_ptr, Replies::MODE_MSG(nickname, c->get_username(), c->get_hostname(), chanName, modestring), NULL);
 			break;
 		case 5://-l
 			if (chan_ptr->get_limit() == 0)
 				return;
 			chan_ptr->set_limit(0, c);
 			//broadcast ;//message broadcast du changement
+			broadcastToChannel(server, chan_ptr, Replies::MODE_MSG(nickname, c->get_username(), c->get_hostname(), chanName, modestring), NULL);
 			break;
 	//si o (operator) +o nickname -o nickname => B ? => ignore la commande si pas de param
 	//	- + member =>
@@ -944,6 +997,7 @@ void	CommandHandler::handleMODE(Server &server, Client *c, const Message &msg)//
 			{
 				chan_ptr->addOperator(target_user);
 				//broadcast ;//broadcast sur chan_ptr pour dire que target_user est bien operator => "<c au bon format> MODE #chan +o user_target\r\n"
+				broadcastToChannel(server, chan_ptr, Replies::MODE_MSG(nickname, c->get_username(), c->get_hostname(), chanName, modestring), NULL);
 			}
 			break;
 		case 7://-o
@@ -960,6 +1014,7 @@ void	CommandHandler::handleMODE(Server &server, Client *c, const Message &msg)//
 			{
 				chan_ptr->removeOperator(target_user);
 				//broadcast ;//broadcast sur chan_ptr pour dire que target_user n'est plus operator "<c au bon format> MODE #chan -o user_target\r\n"
+				broadcastToChannel(server, chan_ptr, Replies::MODE_MSG(nickname, c->get_username(), c->get_hostname(), chanName, modestring), NULL);
 			}
 			break;
 	//k (key) => B ? ou C ? => ignore la commande si pas de param
@@ -990,17 +1045,18 @@ void	CommandHandler::handleMODE(Server &server, Client *c, const Message &msg)//
 			}
 			chan_ptr->set_key(msg.params[2], c);
 			//broadcast;//broadcast un message indiquant qu'une clef a ete mise sur le channel (on la donne ou pas ?)
+			broadcastToChannel(server, chan_ptr, Replies::MODE_MSG(nickname, c->get_username(), c->get_hostname(), chanName, modestring), NULL);
 			break;
 		case 9://-k
 			if (!chan_ptr->hasKey())
 				return;
 			chan_ptr->set_key("", c);
 			//broadcast;//broadcast un message indiquant que la clef du channel a ete effacee
+			broadcastToChannel(server, chan_ptr, Replies::MODE_MSG(nickname, c->get_username(), c->get_hostname(), chanName, modestring), NULL);
 			break;
 		default:
 			c->set_bufferOut(Replies::ERR_UNKNOWNMODE(serverName, nickname, modestring[0]));//ERR_UNKNOWNMODE (472)
 			server.switchPollOut(c->get_socketFd());
-			return;
 			break;
 	}
 	return;
