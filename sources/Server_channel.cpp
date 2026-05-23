@@ -6,7 +6,7 @@
 /*   By: dnayel <dnayel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/09 10:40:24 by aibonade          #+#    #+#             */
-/*   Updated: 2026/05/22 18:06:40 by dnayel           ###   ########.fr       */
+/*   Updated: 2026/05/23 09:24:42 by dnayel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -75,7 +75,7 @@ std::string	Server::lowerName(std::string const name)
 	i = 0;
 	while (str[i])
 	{
-		str[i] = std::tolower(str[i]);
+		str[i] = static_cast<char>(std::tolower(static_cast<unsigned char>(str[i])));
 		i++;
 	}
 std::cout << "[DEBUG] name (" << name << ") normalized = " << str << std::endl;//On l'enlevera en temps voulu, laisse la collee au bord :) J'aimerais checker le # notamment

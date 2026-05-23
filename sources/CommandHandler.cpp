@@ -6,7 +6,7 @@
 /*   By: dnayel <dnayel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/05 15:55:21 by dnayel            #+#    #+#             */
-/*   Updated: 2026/05/22 18:24:14 by dnayel           ###   ########.fr       */
+/*   Updated: 2026/05/23 10:06:27 by dnayel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,10 +47,10 @@ void CommandHandler::handleCommand(Server &server, Client *client, const Message
 	if (msg.command == "CAP") // Ignore first, modern clients send it and disconnect if ERR_
 		return;
 	if (msg.command == "PASS")
-		{
+	{
 			handlePASS(server, client, msg);
 			return;
-		}
+	}
 	if (msg.command == "NICK")
 	{
 		handleNICK(server, client, msg);
@@ -84,28 +84,47 @@ void CommandHandler::handleCommand(Server &server, Client *client, const Message
 	}
 // Post registration Authorized COMMANDS
 	if (msg.command == "JOIN")
+	{
 		handleJOIN(server, client, msg);
-	else if (msg.command == "PRIVMSG")
+		return;
+	}
+	if (msg.command == "PRIVMSG")
+	{
 		handlePRIVMSG(server, client, msg);
-	else if (msg.command == "KICK")
+		return;
+	}
+	if (msg.command == "KICK")
+	{
 		handleKICK(server, client, msg);
-	else if (msg.command == "INVITE")
+		return;
+	}
+	if (msg.command == "INVITE")
+	{
 		handleINVITE(server, client, msg);
-	else if (msg.command == "TOPIC")
+		return;
+	}
+	if (msg.command == "TOPIC")
+	{
 		handleTOPIC(server, client, msg);
-	else if (msg.command == "MODE")
+		return;
+	}
+	if (msg.command == "MODE")
+	{
 		handleMODE(server, client, msg);
-	else if (msg.command == "PART")
+		return;
+	}
+	if (msg.command == "PART")
+	{
 		handlePART(server, client, msg);
+		return;
+	}
 
-// Ignored COMMANDS (not implemented) !!! MAYBE MORE TO ADD
+// Ignored COMMANDS (not implemented) MAYBE MORE TO ADD
 	if (msg.command == "WHO"	|| msg.command == "WHOIS"	||
 		msg.command == "NAMES"	|| msg.command == "AWAY"	||
 		msg.command == "MOTD"	|| msg.command == "LIST"	||
-		msg.command == "LUSERS"	|| msg.command == "LUSERS")
+		msg.command == "LUSERS"	|| msg.command == "USERHOST")
 		return;
-
-// Comportement si commande invalide ou inconnue ??
 
 }
 
@@ -124,6 +143,8 @@ void CommandHandler::handleCommand(Server &server, Client *client, const Message
 //ERROR est envoyé sans préfixe :server — c'est une commande directe, pas un numeric.
 //En cas de succès : silence total — on ne répond rien. C'est la convention IRC.
 //passOk = true ne déclenche PAS la registration seul : il faut aussi NICK et USER.
+
+//ex : PASS wrongpass
 void CommandHandler::handlePASS(Server &server, Client *client, const Message &msg)
 {
 	const std::string serverName = server.get_name();
@@ -178,6 +199,8 @@ void CommandHandler::handlePASS(Server &server, Client *client, const Message &m
 //Le serveur confirme le changement en envoyant NICK_CHANGE à l'émetteur et à tous les membres des canaux partagés. C'est comme ça que les autres clients voient le nouveau pseudo.
 //Avant registration, NICK ne génère aucune réponse en cas de succès : on attend que la registration soit complète pour envoyer les 001-004.
 //La spec indique : "The NICK message may be sent from the server to clients to acknowledge their NICK command was successful" — donc si déjà registered, on envoie le NICK_CHANGE même à soi-même.
+
+//ex : NICK newnick
 void CommandHandler::handleNICK(Server &server, Client *client, const Message &msg)
 {
 	const std::string serverName = server.get_name();
@@ -237,6 +260,8 @@ void CommandHandler::handleNICK(Server &server, Client *client, const Message &m
 //La spec indique que si un serveur Ident est disponible, le username fourni par Ident remplace celui de USER — pour ft_irc, on utilise toujours celui de USER.
 //Le username peut être préfixé d'un ~ si pas d'Ident (convention serveur) — pour ft_irc, on stocke tel quel.
 //realname peut contenir n'importe quel caractère (espaces inclus) car c'est un trailing.
+
+//ex : USER ali 0 * :Ali Fontele (ali = username, 0 = mode, * = server, Ali Fontele = realname)
 void CommandHandler::handleUSER(Server &server, Client *client, const Message &msg)
 {
 	const std::string serverName = server.get_name();
@@ -278,6 +303,8 @@ void CommandHandler::handleUSER(Server &server, Client *client, const Message &m
 //  msg.param(0) retourne msg.trailing car params est vide et hasTrailing=true
 //msg.param(0) unifie les deux cas grâce à la logique de Message::param().
 //Si les deux sont vides (PING sans argument), on répond PONG avec "".
+
+//ex : PING token
 void CommandHandler::handlePING(Server &server, Client *client, const Message &msg)
 {
 	const std::string token = msg.param(0);
@@ -287,13 +314,15 @@ void CommandHandler::handlePING(Server &server, Client *client, const Message &m
 }
 //"The server acknowledges this by replying with an ERROR message and closing the connection to the client."
 //"Servers SHOULD prepend <reason> with the ASCII string 'Quit: ' when sending QUIT messages to other clients."
+
+//ex : QUIT :Goodbye everyone
 void CommandHandler::handleQUIT(Server &server, Client *client, const Message &msg)
 {
 	const std::string reason = msg.hasTrailing ? msg.trailing : "";
 	const std::string broadcastquitMsg = "Quit: " + reason;
 
 	if (client->get_registered())
-		server.removeClientFromAllChannels(client->get_socketFd()); // broadcast à ajouter
+		server.removeClientFromAllChannels(client->get_socketFd(), broadcastquitMsg); // broadcast à ajouter
 
 	const std::string errorReason = reason.empty() ? "Goodbye" : reason;
 	client->set_bufferOut(Replies::ERROR_MSG(client->get_hostname() + " (" + errorReason + ")"));
@@ -389,6 +418,7 @@ std::cout << "[DEBUG] allowChar string = \"" << allowedChar << "\""<< std::endl;
 	return (true);
 }
 
+//ex : JOIN #chan1,#chan2 key1,key2
 void CommandHandler::handleJOIN(Server &server, Client *c, const Message &msg)
 {
 //variables :
@@ -510,7 +540,7 @@ void CommandHandler::handleJOIN(Server &server, Client *c, const Message &msg)
 //Comment gérer les messages d'erreur non bloquants => bool no_error
 	return;
 }
-
+//ex : PRIVMSG #chan1,#chan2 user1,user2 :Hello everyone
 void	CommandHandler::handlePRIVMSG(Server &server, Client *c, const Message &msg)
 {
 	//Le check du client non null à faire avant non ?
@@ -599,6 +629,7 @@ void	CommandHandler::handlePRIVMSG(Server &server, Client *c, const Message &msg
 					break;
 				}
 				user_target->set_bufferOut(Replies::PRIVMSG_MSG(nickname, c->get_username(), c->get_hostname(), target, msg.trailing));//envoyer le param[1] a la target
+				server.switchPollOut(user_target->get_socketFd());
 				old_targets.insert(Server::lowerName(target));
 				break;
 			case 3:
@@ -612,7 +643,7 @@ void	CommandHandler::handlePRIVMSG(Server &server, Client *c, const Message &msg
 	}
 	return;
 }
-
+//ex : KICK #chan1,#chan2 user1,user2 :You are not welcome here
 void	CommandHandler::handleKICK(Server &server, Client *c, const Message &msg)//historiquement on pouvait avoir #chan1,#chan2 user1,user2 mais ce n'est plus tres usite ajd, du coup je ne l'ai pas implemente mais a voir si vous preferez que je le fasse aussi au cas ou
 {
 	std::string	reason = "has been kicked from channel";//si pas de raison precisee => mettre un message par defaut (au debut ? en mode std::string reason = "has been kicked from channel") //Faut mettre les deux points devant ? (":has been kicked from channel")
@@ -682,6 +713,7 @@ void	CommandHandler::handleKICK(Server &server, Client *c, const Message &msg)//
 	return;
 }
 
+//ex : INVITE user1 #chan1
 void	CommandHandler::handleINVITE(Server &server, Client *c, const Message &msg)//nickname chan//ya une incoherence dans les infos de modern.ircdocs et la RFC sur l'existance des chan et client du coup j'ai tranche en demandant a ce que les deux existent bien
 {
 	Channel		*chan;
@@ -689,8 +721,6 @@ void	CommandHandler::handleINVITE(Server &server, Client *c, const Message &msg)
 
 	const std::string serverName = server.get_name();
 	const std::string nickname = c->get_nickname();
-	const std::string targetNick = msg.params[0];
-	const std::string chanName = msg.params[1];
 
 	if (msg.params.empty() || msg.params.size() < 2)
 	{
@@ -698,8 +728,13 @@ void	CommandHandler::handleINVITE(Server &server, Client *c, const Message &msg)
 		server.switchPollOut(c->get_socketFd());
 		return;
 	}
+
+	const std::string targetNick = msg.params[0];
+	const std::string chanName = msg.params[1];
+
 	invited_guy = checkClientExists(server, msg.params[0]);
 	chan = server.get_channel(msg.params[1]); // chan pas utilisable dans mes ERR_ j'utlise msg.params[1] pour récup le nom du chan, est ce que ca vaut le coup de le passer en lowercaser pour les msgs ?
+
 	if (chan == NULL)
 	{
 		c->set_bufferOut(Replies::ERR_NOSUCHCHANNEL(serverName, nickname, chanName));//ERR_NOSUCHCHANNEL (403)
@@ -728,7 +763,7 @@ void	CommandHandler::handleINVITE(Server &server, Client *c, const Message &msg)
 	else
 	{
 		chan->addInvite(invited_guy);
-		c->set_bufferOut(Replies::RPL_INVITING(serverName, nickname, targetNick, chanName));//RPL_INVITING (341) a c
+		c->set_bufferOut(Replies::RPL_INVITING(serverName, nickname, targetNick, chanName));//RPL_INVITING (341) a op
 		server.switchPollOut(c->get_socketFd());
 		invited_guy->set_bufferOut(Replies::INVITE_MSG(nickname, c->get_username(), c->get_hostname(), targetNick, chanName));//message d'invitation a invited_guy (:<c au bon format> INVITE <invited_guy> <chan>)
 		server.switchPollOut(invited_guy->get_socketFd());
@@ -736,6 +771,7 @@ void	CommandHandler::handleINVITE(Server &server, Client *c, const Message &msg)
 	return;
 }
 
+//ex : TOPIC #chan1 :New topic for chan1
 void	CommandHandler::handleTOPIC(Server &server, Client *c, const Message &msg)//chan [nouveau topic]
 {
 	Channel		*chan;
@@ -743,7 +779,6 @@ void	CommandHandler::handleTOPIC(Server &server, Client *c, const Message &msg)/
 
 	const std::string serverName = server.get_name();
 	const std::string nickname = c->get_nickname();
-	const std::string chanName = msg.params[0];
 
 	if (msg.params.empty() || msg.params[0].empty())
 	{
@@ -751,7 +786,10 @@ void	CommandHandler::handleTOPIC(Server &server, Client *c, const Message &msg)/
 		server.switchPollOut(c->get_socketFd());
 		return;
 	}
+
+	const std::string chanName = msg.params[0];
 	chan = server.get_channel(msg.params[0]);
+
 	if (chan == NULL)
 	{
 		c->set_bufferOut(Replies::ERR_NOSUCHCHANNEL(serverName, nickname, chanName));//ERR_NOSUCHCHANNEL (403)
@@ -762,7 +800,7 @@ void	CommandHandler::handleTOPIC(Server &server, Client *c, const Message &msg)/
 		c->set_bufferOut(Replies::ERR_NOTONCHANNEL(serverName, nickname, chanName));//ERR_NOTONCHANNEL (442)
 		server.switchPollOut(c->get_socketFd());
 	}
-	else if (msg.params.size() == 1)
+	else if (msg.params.size() == 1 && !msg.hasTrailing)
 	{
 		topic = chan->get_topic();
 		if (topic.empty())
@@ -785,6 +823,7 @@ void	CommandHandler::handleTOPIC(Server &server, Client *c, const Message &msg)/
 	return;
 }
 
+//ex : PART #chan1,#chan2 :Goodbye everyone
 void	CommandHandler::handlePART(Server &server, Client *c, const Message &msg)//Non obg mais utile pout JOIN//Penser a suppr membre & operator & invite
 {
 	size_t		pos;
@@ -798,7 +837,8 @@ void	CommandHandler::handlePART(Server &server, Client *c, const Message &msg)//
 
 	if (msg.params.empty() || msg.params[0].empty())
 	{
-		;//ERR_NEEDMOREPARAMS(461)
+		c->set_bufferOut(Replies::ERR_NEEDMOREPARAMS(serverName, nickname, "PART"));//ERR_NEEDMOREPARAMS(461)
+		server.switchPollOut(c->get_socketFd());
 		return;
 	}
 	lst_chan = msg.params[0];
@@ -857,6 +897,7 @@ void	CommandHandler::namesReply(Server &server, Client *c, Channel *chan)//A voi
 	return;
 }
 
+//ex : MODE #Tagada +o Pouet
 void	CommandHandler::handleMODE(Server &server, Client *c, const Message &msg)//target (chan) [modestring mode_arg] => ex: #Tagada +o Pouet tagada
 {///!\ ON EST CENSES POUVOIR AVOIR DES TRUCS COMME +ltkey pouet...
 	Channel		*chan_ptr;
@@ -991,6 +1032,7 @@ void	CommandHandler::handleMODE(Server &server, Client *c, const Message &msg)//
 			if (!target_user || !isMemberChannel(target_user, chan_ptr))
 			{
 				c->set_bufferOut(Replies::ERR_USERNOTINCHANNEL(serverName, nickname, msg.params[2], chanName));//ERR_USERNOTINCHANNEL (441)
+				server.switchPollOut(c->get_socketFd());
 				return;
 			}
 			if (!chan_ptr->isOperator(target_user))

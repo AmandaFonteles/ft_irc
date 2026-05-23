@@ -6,7 +6,7 @@
 /*   By: dnayel <dnayel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 21:54:11 by afontele          #+#    #+#             */
-/*   Updated: 2026/05/22 12:24:19 by dnayel           ###   ########.fr       */
+/*   Updated: 2026/05/23 09:35:18 by dnayel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,6 +26,7 @@
 # include <unistd.h> //for close
 # include <fcntl.h>
 # include <netinet/in.h> //for struct sockaddr_in, IPPROTO_TCP
+# include <arpa/inet.h> //for inet_ntop() : convertit une adresse binaire IPv4 en chaîne lisible
 # include <cstring> //for memset
 # include <stdexcept> // necessary for handling error inside the Constructor
 # include "Channel.hpp"
@@ -65,7 +66,7 @@ public:
 	void	cleanClosure(int clientFd);
 	void	switchPollOut(int clientFd);
 	void	sendMessage(int clientFd);
-	void	removeClientFromAllChannels(int clientFd);
+	void	removeClientFromAllChannels(int clientFd, const std::string &reason);
 
 	//Channel methods
 	Channel				*get_channel(std::string const name);//retourne NULL si pas trouve

@@ -6,7 +6,7 @@
 /*   By: dnayel <dnayel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 21:54:23 by afontele          #+#    #+#             */
-/*   Updated: 2026/05/22 18:45:11 by dnayel           ###   ########.fr       */
+/*   Updated: 2026/05/23 09:42:37 by dnayel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -209,7 +209,13 @@ void	Server::acceptNewClient() {
 		return ;
 	}
 
+	char hostBuf[INET_ADDRSTRLEN];
+	std::memset(hostBuf, 0, sizeof(hostBuf));
+	if (inet_ntop(AF_INET, &clientAddr.sin_addr, hostBuf, sizeof(hostBuf)))
+		newClient->set_hostname(std::string(hostBuf));
+
 	_clients[clientSocket] = newClient;
+
 	clientpfd.fd = clientSocket;
 	clientpfd.events = POLLIN;
 	clientpfd.revents = 0;
@@ -235,34 +241,52 @@ void	Server::receiveClientData(int clientFd) {
 	if (bytesRead < 0) {
 		// - Check if MSG_DONTWAIT makes recv return early. This shouldn't cause error
 		if (errno == EAGAIN  || errno == EWOULDBLOCK) {
-			//continue ; //or create a function to everything inside else and call here
+			return ;//continue ; //or create a function to everything inside else and call here
 		}
 		std::cerr << "Error: Server failed on receiving message from client FD: "<< clientFd << std::endl;
 		cleanClosure(clientFd);
+		return ;
 	}
 
 	// 2. Clean clousure
 	else if (bytesRead == 0) {
 		//remove client from vector AND map
 		cleanClosure(clientFd);
+		return ;
 	}
 
 	// 3. Include received data to _bufferIn
 	else {
 		// - Safety check to see if client exists
 		if (_clients.find(clientFd) == _clients.end()) {
-			std::cerr << "Received data from unkwon client." << std::endl;
+			std::cerr << "Received data from unknown client." << std::endl;
 			return ;
 		}
 
 		std::string	msg = buff;
-		std::cout << "[DEBUG] Message received: " << msg << std::endl;
 		_clients[clientFd]->set_bufferIn(msg);
 
+		std::cout << "[DEBUG] Message received: " << msg << std::endl;
 		// - TEST POLLOUT (Enlever apres?)
 		std::string reply = "[DEBUG]Server heard: " + msg;
 		_clients[clientFd]->set_bufferOut(reply);
 		switchPollOut(clientFd);
+
+		std::vector<std::string> lines =  Parser::extractLines(_clients[clientFd]->get_bufferIn());
+		CommandHandler	cmdHandler;
+		for (std::size_t i = 0; i < lines.size(); i++)
+		{
+			if (lines[i].empty())
+				continue ;
+
+			Message msg = Parser::parseLine(lines[i]);
+
+			if (!msg.command.empty())
+				cmdHandler.handleCommand(*this, _clients[clientFd], msg);
+
+			if (_clients[clientFd]->get_shouldClose())
+				break;
+		}
 	}
 }
 
@@ -273,7 +297,7 @@ void	Server::cleanClosure(int clientFd) {
 		return ;
 
 	// 2. Remove client from _channels
-	removeClientFromAllChannels(clientFd);
+	removeClientFromAllChannels(clientFd, "");
 
 	// 3. Remove channels from client (? do we need that? We will delete the client after anyway)
 	_clients[clientFd]->removeAllChannel();
@@ -324,9 +348,11 @@ void	Server::sendMessage(int clientFd) {
 
 	// - Error checking
 	if (bytesSent < 0) {
-		// CHECK ERRNO ???
+		if (errno == EAGAIN || EWOULDBLOCK)// CHECK ERRNO ???
+			return ;
 		std::cerr << "Error: Server failed on sending message to client FD: "<< clientFd << std::endl;
 		cleanClosure(clientFd);
+		return ;
 	}
 
 	// 2. Handle incomplete messages
@@ -354,12 +380,25 @@ void	Server::sendMessage(int clientFd) {
 //Delete client from all channels
 // ? Check if we need to send messages about that to other clients
 // ? Metre sur Server_channel
-void	Server::removeClientFromAllChannels(int clientFd) {
+void	Server::removeClientFromAllChannels(int clientFd, const std::string &reason) {
 	// - Safety check
 	if (_clients.find(clientFd) == _clients.end()) {
 		std::cerr << "[DEBUG]Couldn't find client FD: " << clientFd << std::endl;
 		return ;
 	}
+
+	// Nayel QUIT MSG for all channels
+	std::string quitMsg;
+	if (_clients[clientFd]->get_registered() && !reason.empty())
+	{
+		quitMsg = Replies::QUIT_MSG(
+			_clients[clientFd]->get_nickname(),
+			_clients[clientFd]->get_username(),
+			_clients[clientFd]->get_hostname(),
+			reason
+		);
+	}
+
 	// 1. Loop through Channel map to remove the client from it
 	// - Increment the iterator when calling erase. Erase destroy it, so if we use it after calling erase, the program will try to acess it that no longer exists
 	std::map<std::string, Channel *>::iterator it = _channels.begin();

@@ -6,7 +6,7 @@
 /*   By: dnayel <dnayel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/29 12:28:04 by dnayel            #+#    #+#             */
-/*   Updated: 2026/05/22 17:59:17 by dnayel           ###   ########.fr       */
+/*   Updated: 2026/05/22 21:37:04 by dnayel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,10 +31,15 @@ std::vector<std::string>	Parser::extractLines(std::string &buffer)
 	while ((pos = buffer.find('\n')) != std::string::npos) // while \n in buffer
 	{
 		std::string line = buffer.substr(0, pos); // extract line until \n
+
+		buffer.erase(0, pos + 1); // remove extracted line and \n from buffer
+
 		if (!line.empty() && line[line.size() - 1] == '\r') // remove \r if present (CRLF)
 			line.erase(line.size() - 1);
+
 		if (line.size() > 510) // IRC msgs max length = 512
 			line.resize(510);
+
 		lines.push_back(line);
 	}
 	return lines;
@@ -80,10 +85,11 @@ Message Parser::parseLine(const std::string &line)
 	// Extracting PARAMS and TRAILING
 	while (pos < len)
 	{
+		while (pos < len && line[pos] == ' ')
+			pos++;
+
 		std::string::size_type	spacePos = line.find(' ', pos);
 
-		while (line[pos] == ' ')
-			pos++;
 		if (pos >= len) // no more params
 			break;
 		if (line[pos] == ':') // Trailing
