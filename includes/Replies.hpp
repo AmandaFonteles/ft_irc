@@ -6,7 +6,7 @@
 /*   By: dnayel <dnayel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/19 14:53:34 by dnayel            #+#    #+#             */
-/*   Updated: 2026/05/21 20:47:51 by dnayel           ###   ########.fr       */
+/*   Updated: 2026/05/23 18:10:44 by dnayel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -70,7 +70,7 @@ class Replies
 
 	/* IRC msgs without numeric codes */
 
-	static std::string PONG(const std::string &serverName, const std::string &token);
+	static std::string PONG(/*const std::string &serverName,*/ const std::string &token);
 	static std::string NICK_CHANGE(const std::string &oldNick, const std::string &user, const std::string &host, const std::string &newNick);
 
 	static std::string JOIN_MSG(const std::string &nick, const std::string &user, const std::string &host, const std::string &channel);

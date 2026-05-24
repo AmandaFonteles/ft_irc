@@ -6,7 +6,7 @@
 /*   By: dnayel <dnayel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/05 15:55:21 by dnayel            #+#    #+#             */
-/*   Updated: 2026/05/23 10:06:27 by dnayel           ###   ########.fr       */
+/*   Updated: 2026/05/23 21:54:05 by dnayel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,7 +45,16 @@ void CommandHandler::handleCommand(Server &server, Client *client, const Message
 		return; // Message ou comportement particulier à définir ??
 // Authorized COMMANDS even without registration
 	if (msg.command == "CAP") // Ignore first, modern clients send it and disconnect if ERR_
+	{
+		if (!msg.params.empty())
+		{
+			if (msg.params[0] == "LS")
+				client->set_bufferOut(":ft_irc CAP * LS :\r\n");
+			else if (msg.params[0] == "END")
+				return;
+		}
 		return;
+	}
 	if (msg.command == "PASS")
 	{
 			handlePASS(server, client, msg);
@@ -309,7 +318,7 @@ void CommandHandler::handlePING(Server &server, Client *client, const Message &m
 {
 	const std::string token = msg.param(0);
 
-	client->set_bufferOut(Replies::PONG(server.get_name(), token));
+	client->set_bufferOut(Replies::PONG(/*server.get_name()s,*/ token));
 	server.switchPollOut(client->get_socketFd());
 }
 //"The server acknowledges this by replying with an ERROR message and closing the connection to the client."
@@ -907,6 +916,11 @@ void	CommandHandler::handleMODE(Server &server, Client *c, const Message &msg)//
 	const std::string serverName = server.get_name();
 	const std::string nickname = c->get_nickname();
 	const std::string chanName = msg.params[0];
+
+	if (chanName[0] != '#')
+	{
+		return;//pour l'instant on ne gère que les modes de chan, pas les modes de client, du coup si la target n'est pas un chan on ignore la commande, a voir si on doit envoyer un message d'erreur ou pas
+	}
 
 	if (msg.params.empty() || msg.params[0].empty())
 	{

@@ -6,7 +6,7 @@
 /*   By: dnayel <dnayel@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/19 14:53:46 by dnayel            #+#    #+#             */
-/*   Updated: 2026/05/22 16:23:15 by dnayel           ###   ########.fr       */
+/*   Updated: 2026/05/23 21:40:17 by dnayel           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -250,9 +250,9 @@ std::string Replies::ERR_INVALIDMODEPARAM(const std::string &serverName, const s
 /*NO NUMERIC CODES*/
 /******************/
 
-std::string Replies::PONG(const std::string &serverName, const std::string &token)
+std::string Replies::PONG(/*const std::string &serverName,*/ const std::string &token)
 {
-	return (":" + serverName + " PONG " + serverName + " :" + token + "\r\n");
+	return (/*":" + serverName + */"PONG :" + /*serverName + " :" +*/ token + "\r\n");
 }
 
 std::string Replies::NICK_CHANGE(const std::string &oldNick, const std::string &user, const std::string &host, const std::string &newNick)
