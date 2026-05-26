@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dnayel <dnayel@student.42.fr>              +#+  +:+       +#+        */
+/*   By: afontele <afontele@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 21:54:23 by afontele          #+#    #+#             */
-/*   Updated: 2026/05/23 09:42:37 by dnayel           ###   ########.fr       */
+/*   Updated: 2026/05/26 18:56:17 by afontele         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -147,7 +147,7 @@ void	Server::ServerRun() {
 		// - this infinite loop + poll() is used to "put the CPU to sleep" til there's data to read;
 		// - A vector of pollfds struct is passed to poll(), since a vector stores all its elements in one continuous block of memory, exactly like a C-array
 		// - Change -1 to POLL_TIMEOUT!!!
-		int eventTrack = poll(&_pollFds[0], _pollFds.size(), -1);
+		int eventTrack = poll(&_pollFds[0], _pollFds.size(), 5000);
 		if (eventTrack < 0) {
 			if (errno == EINTR) {
 				std::cout << "[DEBUG]Interrupted by signal, shouldn't crash the server" << std::endl;
@@ -156,6 +156,12 @@ void	Server::ServerRun() {
 			std::cerr << "Error: Poll" << std::endl;
 			break ;
 		}
+		// 2. Check for timeout (Background Maintenance)
+		if (eventTrack == 0) {
+    		std::cout << "[DEBUG] 5 seconds passed with no activity. Server is awake!" << std::endl;
+    		// In the future, this is where you will loop through _clients to kick idle users
+    		continue ;
+}
 
         // 2. Loop through _pollFds to find which fd triggered an event
 		// - Since poll() returns how many fds flagged and not which ones, this loop is needed
@@ -238,55 +244,45 @@ void	Server::receiveClientData(int clientFd) {
 	ssize_t	bytesRead = recv(clientFd, buff, sizeof(buff) - 1, MSG_DONTWAIT);  //, 0);
 
 	// - Error checking
-	if (bytesRead < 0) {
+	if (bytesRead <= 0) {
 		// - Check if MSG_DONTWAIT makes recv return early. This shouldn't cause error
-		if (errno == EAGAIN  || errno == EWOULDBLOCK) {
-			return ;//continue ; //or create a function to everything inside else and call here
+		if (bytesRead < 0) {
+			std::cerr << "Error: Server failed on receiving message from client FD: "<< clientFd << std::endl;
 		}
-		std::cerr << "Error: Server failed on receiving message from client FD: "<< clientFd << std::endl;
 		cleanClosure(clientFd);
 		return ;
 	}
 
-	// 2. Clean clousure
-	else if (bytesRead == 0) {
-		//remove client from vector AND map
-		cleanClosure(clientFd);
+	// 2. Include received data to _bufferIn
+	// - Safety check to see if client exists
+	if (_clients.find(clientFd) == _clients.end()) {
+		std::cerr << "Received data from unknown client." << std::endl;
 		return ;
 	}
 
-	// 3. Include received data to _bufferIn
-	else {
-		// - Safety check to see if client exists
-		if (_clients.find(clientFd) == _clients.end()) {
-			std::cerr << "Received data from unknown client." << std::endl;
-			return ;
-		}
+	std::string	msg = buff;
+	_clients[clientFd]->set_bufferIn(msg);
 
-		std::string	msg = buff;
-		_clients[clientFd]->set_bufferIn(msg);
+	std::cout << "[DEBUG] Message received: " << msg << std::endl;
+	// - TEST POLLOUT (Enlever apres?)
+	// std::string reply = "[DEBUG]Server heard: " + msg;
+	// _clients[clientFd]->set_bufferOut(reply);
+	// switchPollOut(clientFd);
 
-		std::cout << "[DEBUG] Message received: " << msg << std::endl;
-		// - TEST POLLOUT (Enlever apres?)
-		std::string reply = "[DEBUG]Server heard: " + msg;
-		_clients[clientFd]->set_bufferOut(reply);
-		switchPollOut(clientFd);
+	std::vector<std::string> lines =  Parser::extractLines(_clients[clientFd]->get_bufferIn());
+	CommandHandler	cmdHandler;
+	for (std::size_t i = 0; i < lines.size(); i++)
+	{
+		if (lines[i].empty())
+			continue ;
 
-		std::vector<std::string> lines =  Parser::extractLines(_clients[clientFd]->get_bufferIn());
-		CommandHandler	cmdHandler;
-		for (std::size_t i = 0; i < lines.size(); i++)
-		{
-			if (lines[i].empty())
-				continue ;
+		Message msg = Parser::parseLine(lines[i]);
 
-			Message msg = Parser::parseLine(lines[i]);
+		if (!msg.command.empty())
+			cmdHandler.handleCommand(*this, _clients[clientFd], msg);
 
-			if (!msg.command.empty())
-				cmdHandler.handleCommand(*this, _clients[clientFd], msg);
-
-			if (_clients[clientFd]->get_shouldClose())
-				break;
-		}
+		if (_clients[clientFd]->get_shouldClose())
+			break;
 	}
 }
 
@@ -348,15 +344,13 @@ void	Server::sendMessage(int clientFd) {
 
 	// - Error checking
 	if (bytesSent < 0) {
-		if (errno == EAGAIN || EWOULDBLOCK)// CHECK ERRNO ???
-			return ;
 		std::cerr << "Error: Server failed on sending message to client FD: "<< clientFd << std::endl;
 		cleanClosure(clientFd);
 		return ;
 	}
 
 	// 2. Handle incomplete messages
-	else if (bytesSent < static_cast<ssize_t>(msg.length())) {
+	if (bytesSent < static_cast<ssize_t>(msg.length())) {
 		std::cout << "[DEBUG] Partial send. Sent " << bytesSent << " out of " << msg.length() << " bytes." << std::endl;
 		// - We erase all the bytes sent to client and don't change events to POLLIN.
 		// - Like that poll loop will call send message again till bytesSent == msg.length()
