@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dnayel <dnayel@student.42.fr>              +#+  +:+       +#+        */
+/*   By: afontele <afontele@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/28 14:55:46 by aibonade          #+#    #+#             */
-/*   Updated: 2026/05/19 15:16:33 by dnayel           ###   ########.fr       */
+/*   Updated: 2026/05/26 20:46:10 by afontele         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -152,11 +152,13 @@ bool	Client::removeChannel(Channel *chan)
 void	Client::removeAllChannel()//penser a d'abord appeler removeMember autant que necessaire dans le handdler !
 {
 	std::set<Channel *>::iterator	it = _channels.begin();
+	Channel	*chan;
 
 	while (it != _channels.end())
 	{
-		this->removeChannel(*it);
-		it++;
+		chan = *it;
+		this->removeChannel(chan); //++);
+		it++; //erase
 	}
 	return;
 }

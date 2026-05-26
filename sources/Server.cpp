@@ -6,7 +6,7 @@
 /*   By: afontele <afontele@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 21:54:23 by afontele          #+#    #+#             */
-/*   Updated: 2026/05/26 18:56:17 by afontele         ###   ########.fr       */
+/*   Updated: 2026/05/26 21:13:40 by afontele         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -147,7 +147,7 @@ void	Server::ServerRun() {
 		// - this infinite loop + poll() is used to "put the CPU to sleep" til there's data to read;
 		// - A vector of pollfds struct is passed to poll(), since a vector stores all its elements in one continuous block of memory, exactly like a C-array
 		// - Change -1 to POLL_TIMEOUT!!!
-		int eventTrack = poll(&_pollFds[0], _pollFds.size(), 5000);
+		int eventTrack = poll(&_pollFds[0], _pollFds.size(), 5000); //5secs is not enough use 20?
 		if (eventTrack < 0) {
 			if (errno == EINTR) {
 				std::cout << "[DEBUG]Interrupted by signal, shouldn't crash the server" << std::endl;
@@ -166,20 +166,25 @@ void	Server::ServerRun() {
         // 2. Loop through _pollFds to find which fd triggered an event
 		// - Since poll() returns how many fds flagged and not which ones, this loop is needed
 		for (int i = static_cast<int>(_pollFds.size() - 1); i >= 0; i--) {
+			// - Use vars to save current fd and revents, like that, if receiveClientData close the fd,
+			// we can use the saved fd in curFd to check if it exist before sending msg.
+			int		curFd = _pollFds[i].fd;
+			short	curRev = _pollFds[i].revents;
+			
 			// - If _pollFds[i].revents = 0, nothing happened on this socket.
 			// - revents is a bitmap(each bit works as a checkbox), we use bitwise AND to check that the POLLIN box is checked
 			// - The bitwise operation is necessary because the same revents can store POLLIN and other flags, and we want to treat every socket that has POLLIN in it.
-			if (_pollFds[i].revents & POLLIN) {
+			if (curRev & POLLIN) {
 				// 3. If it's the _serverSocket, a client is waiting to join -> call acceptNewClient()
-				if (_pollFds[i].fd == _serverSocket)
+				if (curFd == _serverSocket)
 					acceptNewClient();
 				// 4. If it's a client fd -> call handleClientData(fd)
 				else
-					receiveClientData(_pollFds[i].fd);
+					receiveClientData(curFd);
 			}
 			// 5. Check for POLLOUT (to send data to clients)
-			if (_pollFds[i].revents & POLLOUT) {
-				sendMessage(_pollFds[i].fd);
+			if ((curRev & POLLOUT) && _clients.find(curFd) != _clients.end()) {
+				sendMessage(curFd);
 			}
 		}
 	}
@@ -281,8 +286,10 @@ void	Server::receiveClientData(int clientFd) {
 		if (!msg.command.empty())
 			cmdHandler.handleCommand(*this, _clients[clientFd], msg);
 
-		if (_clients[clientFd]->get_shouldClose())
-			break;
+		if (_clients[clientFd]->get_shouldClose()) {
+			cleanClosure(clientFd);
+			break ;
+		}
 	}
 }
 
