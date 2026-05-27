@@ -6,7 +6,7 @@
 /*   By: afontele <afontele@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/28 14:55:46 by aibonade          #+#    #+#             */
-/*   Updated: 2026/05/26 20:46:10 by afontele         ###   ########.fr       */
+/*   Updated: 2026/05/27 19:25:03 by afontele         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -148,7 +148,7 @@ bool	Client::removeChannel(Channel *chan)
 	_channels.erase(it);
 	return (true);
 }
-
+//cout pour DEBUG
 void	Client::removeAllChannel()//penser a d'abord appeler removeMember autant que necessaire dans le handdler !
 {
 	std::set<Channel *>::iterator	it = _channels.begin();

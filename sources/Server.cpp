@@ -6,7 +6,7 @@
 /*   By: afontele <afontele@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 21:54:23 by afontele          #+#    #+#             */
-/*   Updated: 2026/05/26 21:13:40 by afontele         ###   ########.fr       */
+/*   Updated: 2026/05/28 00:25:02 by afontele         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -75,7 +75,8 @@ bool	Server::ServerInit() {
 	// - SOCK_STREAM = Provides  sequenced,  reliable,  two-way,  connection-based byte streams.
 	// - IPPROTO_TCP = set TCP as the transport protocol.
 	// ! Tried using the OR and SOCK_NONBLOCK, but it's not C++98 compliant (apparently)
-	_serverSocket = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, IPPROTO_TCP); //If error errno is set
+	// _serverSocket = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, IPPROTO_TCP); //If error errno is set
+	_serverSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP); 
 	if (_serverSocket < 0) { //handle error (cerr, exception...)
 		std::cerr << "Error: Fail to create socket." << std::endl;
 		return (false);
@@ -147,7 +148,7 @@ void	Server::ServerRun() {
 		// - this infinite loop + poll() is used to "put the CPU to sleep" til there's data to read;
 		// - A vector of pollfds struct is passed to poll(), since a vector stores all its elements in one continuous block of memory, exactly like a C-array
 		// - Change -1 to POLL_TIMEOUT!!!
-		int eventTrack = poll(&_pollFds[0], _pollFds.size(), 5000); //5secs is not enough use 20?
+		int eventTrack = poll(&_pollFds[0], _pollFds.size(), 20000); //5secs is not enough use 20?
 		if (eventTrack < 0) {
 			if (errno == EINTR) {
 				std::cout << "[DEBUG]Interrupted by signal, shouldn't crash the server" << std::endl;
@@ -158,7 +159,7 @@ void	Server::ServerRun() {
 		}
 		// 2. Check for timeout (Background Maintenance)
 		if (eventTrack == 0) {
-    		std::cout << "[DEBUG] 5 seconds passed with no activity. Server is awake!" << std::endl;
+    		std::cout << "[DEBUG] 20 seconds passed with no activity. Server is awake!" << std::endl;
     		// In the future, this is where you will loop through _clients to kick idle users
     		continue ;
 }
@@ -245,15 +246,15 @@ void	Server::receiveClientData(int clientFd) {
 
 	// 1. Read data from the client
 	// ? recv(clientFd, &buff, ...)
-	// - Use MSG_DONTWAIT so the socket don't block this specific operation
-	ssize_t	bytesRead = recv(clientFd, buff, sizeof(buff) - 1, MSG_DONTWAIT);  //, 0);
+	// - Use MSG_DONTWAIT so the socket don't block this specific operation, if not using fcntl
+	ssize_t	bytesRead = recv(clientFd, buff, sizeof(buff) - 1, MSG_DONTWAIT);
 
 	// - Error checking
 	if (bytesRead <= 0) {
 		// - Check if MSG_DONTWAIT makes recv return early. This shouldn't cause error
-		if (bytesRead < 0) {
-			std::cerr << "Error: Server failed on receiving message from client FD: "<< clientFd << std::endl;
-		}
+		// if (bytesRead < 0) {
+		// 	std::cerr << "Error: Server failed on receiving message from client FD: "<< clientFd << std::endl;
+		// }
 		cleanClosure(clientFd);
 		return ;
 	}
@@ -302,9 +303,6 @@ void	Server::cleanClosure(int clientFd) {
 	// 2. Remove client from _channels
 	removeClientFromAllChannels(clientFd, "");
 
-	// 3. Remove channels from client (? do we need that? We will delete the client after anyway)
-	_clients[clientFd]->removeAllChannel();
-
 	// 4. Close the socket
 	close(clientFd);
 
@@ -347,7 +345,7 @@ void	Server::sendMessage(int clientFd) {
 		return ;
 
 	// 1. Use send() to send data to client
-	ssize_t	bytesSent = send(clientFd, msg.c_str(), msg.length(), MSG_DONTWAIT); //0);
+	ssize_t	bytesSent = send(clientFd, msg.c_str(), msg.length(), MSG_DONTWAIT);
 
 	// - Error checking
 	if (bytesSent < 0) {
@@ -392,12 +390,12 @@ void	Server::removeClientFromAllChannels(int clientFd, const std::string &reason
 	std::string quitMsg;
 	if (_clients[clientFd]->get_registered() && !reason.empty())
 	{
+		//broadcast to channel that client quit
 		quitMsg = Replies::QUIT_MSG(
 			_clients[clientFd]->get_nickname(),
 			_clients[clientFd]->get_username(),
 			_clients[clientFd]->get_hostname(),
-			reason
-		);
+			reason);
 	}
 
 	// 1. Loop through Channel map to remove the client from it
