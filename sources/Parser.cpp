@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Parser.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dnayel <dnayel@student.42.fr>              +#+  +:+       +#+        */
+/*   By: afontele <afontele@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/29 12:28:04 by dnayel            #+#    #+#             */
-/*   Updated: 2026/05/22 21:37:04 by dnayel           ###   ########.fr       */
+/*   Updated: 2026/05/28 23:04:42 by afontele         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,18 +26,18 @@ std::string Parser::toUpper(const std::string &str)
 std::vector<std::string>	Parser::extractLines(std::string &buffer)
 {
 	std::vector<std::string>	lines;
-	std::string::size_type		pos; // = typedef of string index also is the return type of line.size/find()
+	std::string::size_type		pos;
 
-	while ((pos = buffer.find('\n')) != std::string::npos) // while \n in buffer
+	while ((pos = buffer.find('\n')) != std::string::npos)
 	{
-		std::string line = buffer.substr(0, pos); // extract line until \n
+		std::string line = buffer.substr(0, pos);
 
-		buffer.erase(0, pos + 1); // remove extracted line and \n from buffer
+		buffer.erase(0, pos + 1);
 
-		if (!line.empty() && line[line.size() - 1] == '\r') // remove \r if present (CRLF)
+		if (!line.empty() && line[line.size() - 1] == '\r')
 			line.erase(line.size() - 1);
 
-		if (line.size() > 510) // IRC msgs max length = 512
+		if (line.size() > 510)
 			line.resize(510);
 
 		lines.push_back(line);
@@ -52,20 +52,19 @@ Message Parser::parseLine(const std::string &line)
 	std::string::size_type	len = line.size();
 
 	if (line.empty())
-		return msg; // return empty message if line is empty
+		return msg;
 
-	// Extracting Prefix
 	if (line[0] == ':')
 	{
-		std::string::size_type	spacePos = line.find(' ', 1); // 1 skips the initial ':'
+		std::string::size_type	spacePos = line.find(' ', 1);
 
-		if (spacePos == std::string::npos) // no space after prefix, invalid message
+		if (spacePos == std::string::npos)
 			return msg;
-		msg.prefix = line.substr(1, spacePos - 1); // -1 to exclude the initial ':'
-		pos = spacePos; // pos at the end of prefix
+		msg.prefix = line.substr(1, spacePos - 1);
+		pos = spacePos;
 		while (pos < len && line[pos] == ' ')
 			pos++;
-		if (pos >= len) // no command after prefix, invalid message
+		if (pos >= len)
 			return msg;
 	}
 
@@ -73,13 +72,13 @@ Message Parser::parseLine(const std::string &line)
 	{
 		std::string::size_type	spacePos = line.find(' ', pos);
 
-		if (spacePos == std::string::npos) // Command is last element, no params
+		if (spacePos == std::string::npos)
 		{
-			msg.command = toUpper(line.substr(pos)); // Command is case-insensitive, convert to uppercase for uniformity
+			msg.command = toUpper(line.substr(pos));
 			return msg;
 		}
 		msg.command = toUpper(line.substr(pos, spacePos - pos));
-		pos = spacePos; // pos at the end of command
+		pos = spacePos;
 	}
 
 	// Extracting PARAMS and TRAILING
@@ -90,22 +89,22 @@ Message Parser::parseLine(const std::string &line)
 
 		std::string::size_type	spacePos = line.find(' ', pos);
 
-		if (pos >= len) // no more params
+		if (pos >= len)
 			break;
-		if (line[pos] == ':') // Trailing
+		if (line[pos] == ':')
 		{
-			msg.trailing = line.substr(pos + 1); // Trailing is everything after ':'
-			msg.params.push_back(line.substr(pos + 1)); // Trailing is also considered a param for convenience
+			msg.trailing = line.substr(pos + 1);
+			msg.params.push_back(line.substr(pos + 1));
 			msg.hasTrailing = true;
-			break; // Trailing is always last, we can stop parsing
+			break;
 		}
-		if (spacePos == std::string::npos) // Last param (EoL)
+		if (spacePos == std::string::npos)
 		{
 			msg.params.push_back(line.substr(pos));
 			break;
 		}
 		msg.params.push_back(line.substr(pos, spacePos - pos));
-		pos = spacePos; // pos at the end of previous param
+		pos = spacePos;
 
 	}
 

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Replies.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dnayel <dnayel@student.42.fr>              +#+  +:+       +#+        */
+/*   By: afontele <afontele@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/19 14:53:34 by dnayel            #+#    #+#             */
-/*   Updated: 2026/05/23 18:10:44 by dnayel           ###   ########.fr       */
+/*   Updated: 2026/05/28 22:06:42 by afontele         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,8 +14,8 @@
 # define REPLIES_HPP
 
 # include <string>
-# include <sstream>  /* ostringstream for formatNumeric */
-# include <iomanip>   /* setw, setfill */
+# include <sstream>
+# include <iomanip>
 
 
 class Replies
@@ -70,7 +70,7 @@ class Replies
 
 	/* IRC msgs without numeric codes */
 
-	static std::string PONG(/*const std::string &serverName,*/ const std::string &token);
+	static std::string PONG(const std::string &token);
 	static std::string NICK_CHANGE(const std::string &oldNick, const std::string &user, const std::string &host, const std::string &newNick);
 
 	static std::string JOIN_MSG(const std::string &nick, const std::string &user, const std::string &host, const std::string &channel);

@@ -6,7 +6,7 @@
 /*   By: afontele <afontele@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 21:54:11 by afontele          #+#    #+#             */
-/*   Updated: 2026/05/25 16:35:14 by afontele         ###   ########.fr       */
+/*   Updated: 2026/05/28 22:06:05 by afontele         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,42 +15,39 @@
 
 # include <iostream>
 # include <string>
-# include <sstream> // necessary for stringstream
-# include <vector> //necessary for poll() - we pass a struct pollfd as poll argument
+# include <sstream>
+# include <vector>
 # include <map>
 # include <poll.h>
-# include <sys/socket.h> //for AF_INET and bind
+# include <sys/socket.h>
 # include <sys/types.h>
 # include <cerrno>
 # include <csignal>
-# include <unistd.h> //for close
+# include <unistd.h>
 # include <fcntl.h>
-# include <netinet/in.h> //for struct sockaddr_in, IPPROTO_TCP
-# include <arpa/inet.h> //for inet_ntop() : convertit une adresse binaire IPv4 en chaîne lisible
-# include <cstring> //for memset
-# include <stdexcept> // necessary for handling error inside the Constructor
+# include <netinet/in.h> 
+# include <arpa/inet.h> 
+# include <cstring>
+# include <stdexcept>
 # include "Channel.hpp"
 # include "Client.hpp"
 # include "CommandHandler.hpp"
-# include "Parser.hpp" // requis pour receiveClientData() et sendMessage() pour parser les messages entrants et sortants
-# include "Replies.hpp" // QUIT_MSG dans removeClientFromAllChannels()
+# include "Parser.hpp"
+# include "Replies.hpp"
 
 class	Server {
 private:
-	unsigned short		_port; //should I use unsigned short (for endian convertion - htons() and ntohs)
-	/*Basically, you’ll want to convert the numbers to Network Byte Order before they go out on the wire, and convert them to Host Byte Order as they come in off the wire.*/
+	unsigned short		_port;
 	std::string const	_password;
-	int					_serverSocket; //fd
-	std::vector<struct pollfd>	_pollFds; //vector of pollfd structs necessary for poll()
-	std::map<std::string, Channel *> _channels; //map of pointers
+	int					_serverSocket;
+	std::vector<struct pollfd>	_pollFds;
+	std::map<std::string, Channel *> _channels;
 	std::map<int, Client *>	_clients;
 	static bool			_running;
 
 	Server();
 public:
 	Server(const std::string &port, const std::string &password);
-	// Server(Server const &other);
-	// Server	&operator=(Server const &other);
 	~Server();
 
 	//Signal method
@@ -69,14 +66,14 @@ public:
 	void	removeClientFromAllChannels(int clientFd, const std::string &reason);
 
 	//Channel methods
-	Channel				*get_channel(std::string const name);//retourne NULL si pas trouve
-	Channel				*createChannel(std::string const name);//retourne NULL si erreur ?
+	Channel				*get_channel(std::string const name);
+	Channel				*createChannel(std::string const name);
 	void				deleteChannel(Channel *chan);
-	Client				*get_client(std::string const nickname);//retourne NULL si pas trouve
+	Client				*get_client(std::string const nickname);
 	static std::string	lowerName(std::string const name);
 	void				removeClientFromChannel(Client *c, Channel *chan);
 
-	// Nayel
+	// Gtter
 	std::string			get_name() const;
 	std::string			get_password() const;
 };

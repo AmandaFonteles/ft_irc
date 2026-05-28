@@ -6,7 +6,7 @@
 /*   By: afontele <afontele@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/28 14:55:46 by aibonade          #+#    #+#             */
-/*   Updated: 2026/05/27 19:25:03 by afontele         ###   ########.fr       */
+/*   Updated: 2026/05/28 22:59:30 by afontele         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,7 +37,7 @@ Client::~Client()
 void	Client::set_nickname(std::string nickname)
 {
 	_nickname = nickname;
-	return;//exception ? Booleen ?
+	return;
 }
 
 void	Client::set_username(std::string username)
@@ -66,7 +66,7 @@ void	Client::set_bufferIn(std::string str)
 
 void	Client::set_bufferOut(std::string str)
 {
-	_bufferOut = _bufferOut + str;//separateur a ajouter ? ou il est debase dans la str ? ou yen n'a pas ?
+	_bufferOut = _bufferOut + str;
 	return;
 }
 
@@ -95,9 +95,6 @@ bool	Client::get_registered() const
 {
 	return (_registered);
 }
-
-// std::set<Channel>	Client::get_channels();//get ou print ? ou string ? //TO DO
-// Channel	Client::get_channel(int i);//ou nom du chanel ? //TO DO
 
 std::string	&Client::get_bufferIn()
 {
@@ -129,21 +126,6 @@ std::string			Client::get_channels() const
 	return s;
 }
 
-// std::set<Channel *>	const Client::get_channels()
-// {
-// 	return (_channels);
-// }
-
-/********OTHER METHODS********/
-// Client	&Client::operator=(Client const &to_affect)//est-ce qu'on copie les buffers, passOK et channels et fd ? //TO DO
-// {
-// 	if (this != &to_affect)
-// 	{
-// 		//en fait pour moi ca n'a pas vraiment de sens de faire un client =, si ? Ya peut-etre un truc que j'ai mal compris...
-// 	}
-// 	return (*this);
-// }
-
 bool	Client::addChannel(Channel *chan)
 {
 	std::pair<std::set<Channel *>::iterator, bool>	ret;
@@ -168,8 +150,8 @@ bool	Client::removeChannel(Channel *chan)
 	_channels.erase(it);
 	return (true);
 }
-//cout pour DEBUG
-void	Client::removeAllChannel()//penser a d'abord appeler removeMember autant que necessaire dans le handdler !
+
+void	Client::removeAllChannel()
 {
 	std::set<Channel *>::iterator	it = _channels.begin();
 	Channel	*chan;
@@ -190,7 +172,6 @@ bool	Client::isInChannel(Channel *chan) const
 	return (false);
 }
 
-/********NAYEL********/
 void	Client::set_hostname(std::string hostname)
 {
 	_hostname = hostname;

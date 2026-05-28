@@ -6,7 +6,7 @@
 /*   By: afontele <afontele@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/30 15:09:52 by afontele          #+#    #+#             */
-/*   Updated: 2026/05/12 19:21:18 by afontele         ###   ########.fr       */
+/*   Updated: 2026/05/28 22:17:30 by afontele         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,7 @@ int	main(int ac, char **av) {
 		std::cerr << "Usage: ./ircserv <port> <password>" << std::endl;
 		return (1);
 	}
+	
 	// 2. Signal setting
 	signal(SIGINT, Server::signalHandler);
 	signal(SIGQUIT, Server::signalHandler);
@@ -35,7 +36,7 @@ int	main(int ac, char **av) {
 			return (1);
 		}
 
-		//run Server
+		// 4. run Server
 		ircServer.ServerRun();
 	}
 	catch(const std::exception& e)

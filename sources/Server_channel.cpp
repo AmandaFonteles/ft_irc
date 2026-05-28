@@ -6,7 +6,7 @@
 /*   By: afontele <afontele@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/09 10:40:24 by aibonade          #+#    #+#             */
-/*   Updated: 2026/05/28 14:52:38 by afontele         ###   ########.fr       */
+/*   Updated: 2026/05/28 23:00:18 by afontele         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,7 +16,7 @@ Channel	*Server::get_channel(std::string const name)
 {
 	std::map<std::string, Channel *>::iterator it;
 
-	it = _channels.find(lowerName(name));// On checke que de toutes facons name est au bon format avec lowerName
+	it = _channels.find(lowerName(name));
 	if (it == _channels.end())
 		return (NULL);
 	return (it->second);
@@ -24,13 +24,10 @@ Channel	*Server::get_channel(std::string const name)
 
 Channel	*Server::createChannel(std::string const name)
 {
-	if (get_channel(name))//il existe deja ?
+	if (get_channel(name))
 		return (NULL);
 
-	//je cree le channel avec new
-	//je le mets dans _channels avec name en minuscule
 	_channels[lowerName(name)] = new Channel(name);
-	//je renvoie le pointeur
 	return (_channels[lowerName(name)]);
 }
 
@@ -58,16 +55,12 @@ Client	*Server::get_client(std::string const nickname)
 	std::string							nickname_lower = Server::lowerName(nickname);
 
 	it = _clients.begin();
-std::cout << "[DEBUG] nickname (" << nickname << ") normalized = " << nickname_lower << std::endl;
 	while (it != _clients.end())
 	{
-std::cout << "[DEBUG] 1" << std::endl;
 		if (Server::lowerName(it->second->get_nickname()) == nickname_lower)
 			return (it->second);
-std::cout << "[DEBUG] 2" << std::endl;
 		it++;
 	}
-std::cout << "[DEBUG] pouet" << std::endl;
 	return (NULL);
 }
 
@@ -82,11 +75,10 @@ std::string	Server::lowerName(std::string const name)
 		str[i] = static_cast<char>(std::tolower(static_cast<unsigned char>(str[i])));
 		i++;
 	}
-std::cout << "[DEBUG] name (" << name << ") normalized = " << str << std::endl;//On l'enlevera en temps voulu, laisse la collee au bord :) J'aimerais checker le # notamment
 	return (str);
 }
 
-//////// NAYEL GETTERS ////
+//////// GETTERS ////
 std::string	Server::get_name() const
 {
 	return ("ft_irc");
