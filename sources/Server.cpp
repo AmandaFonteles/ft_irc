@@ -6,7 +6,7 @@
 /*   By: afontele <afontele@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/23 21:54:23 by afontele          #+#    #+#             */
-/*   Updated: 2026/05/28 00:25:02 by afontele         ###   ########.fr       */
+/*   Updated: 2026/05/28 16:25:18 by afontele         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -301,7 +301,7 @@ void	Server::cleanClosure(int clientFd) {
 		return ;
 
 	// 2. Remove client from _channels
-	removeClientFromAllChannels(clientFd, "");
+	removeClientFromAllChannels(clientFd, "Connection closed");
 
 	// 4. Close the socket
 	close(clientFd);
@@ -377,18 +377,16 @@ void	Server::sendMessage(int clientFd) {
 }
 
 //Delete client from all channels
-// ? Check if we need to send messages about that to other clients
-// ? Metre sur Server_channel
 void	Server::removeClientFromAllChannels(int clientFd, const std::string &reason) {
-	// - Safety check
+	// 1. Safety check
 	if (_clients.find(clientFd) == _clients.end()) {
 		std::cerr << "[DEBUG]Couldn't find client FD: " << clientFd << std::endl;
 		return ;
 	}
-
-	// Nayel QUIT MSG for all channels
+	
+	// 2. Creating QUIT MSG
 	std::string quitMsg;
-	if (_clients[clientFd]->get_registered() && !reason.empty())
+	if (_clients[clientFd]->get_registered())
 	{
 		//broadcast to channel that client quit
 		quitMsg = Replies::QUIT_MSG(
@@ -398,12 +396,35 @@ void	Server::removeClientFromAllChannels(int clientFd, const std::string &reason
 			reason);
 	}
 
-	// 1. Loop through Channel map to remove the client from it
-	// - Increment the iterator when calling erase. Erase destroy it, so if we use it after calling erase, the program will try to acess it that no longer exists
+	// 3. Find all clients from the same channels of the removed client to broadcast the quit message to.
+	std::set<Client *> receiveBroadcast;
+	for (std::map<std::string, Channel *>::iterator ite = _channels.begin(); ite != _channels.end(); ite++) {
+		Channel *chan = ite->second;
+		if (chan->isMember(_clients[clientFd])) {
+			std::set<Client *> chanMembers = chan->get_members();
+			for (std::set<Client *>::iterator mb = chanMembers.begin(); mb!= chanMembers.end(); mb++) {
+				if (*mb != _clients[clientFd])
+					receiveBroadcast.insert(*mb);
+			}
+		}
+	}
+	
+	//4. Send broadcast only once for each client in receiveBroadcast
+	if (!quitMsg.empty()) {
+		for (std::set<Client *>::iterator ito = receiveBroadcast.begin(); ito != receiveBroadcast.end(); ito++) {
+			(*ito)->set_bufferOut(quitMsg);
+			switchPollOut((*ito)->get_socketFd());
+		}
+	}
+	
+	// 5. Loop through Channel map to remove the client from it
+	// - Increment the iterator when calling erase. Erase destroy it, so if we use it after calling erase,
+	// the program will try to acess it that no longer exists.
 	std::map<std::string, Channel *>::iterator it = _channels.begin();
 	while (it != _channels.end()) {
 		it->second->removeMember(_clients[clientFd]);
 		it->second->removeOperator(_clients[clientFd]);
+		it->second->removeInvite(_clients[clientFd]);
 
 		// 3. Check if channel is empty
 		if (it->second->nbMembers() == 0) {

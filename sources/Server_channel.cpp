@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server_channel.cpp                                 :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: dnayel <dnayel@student.42.fr>              +#+  +:+       +#+        */
+/*   By: afontele <afontele@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/09 10:40:24 by aibonade          #+#    #+#             */
-/*   Updated: 2026/05/23 09:24:42 by dnayel           ###   ########.fr       */
+/*   Updated: 2026/05/28 14:52:38 by afontele         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,7 +36,7 @@ Channel	*Server::createChannel(std::string const name)
 
 void	Server::deleteChannel(Channel *chan)
 {
-	_channels.erase(chan->get_name());
+	_channels.erase(lowerName(chan->get_name()));
 	if (chan)
 		delete chan;
 	return;
