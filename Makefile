@@ -2,8 +2,8 @@
 NAME		:= ircserv
 
 ### UTILS ###
-CC			:= c++
-CFLAGS		:= -Wall -Werror -Wextra
+CXX			:= c++
+CXXFLAGS		:= -Wall -Werror -Wextra
 #DEBUG_FLAGS	:= -g -g3
 DEPS_FLAGS	:= -MMD -MP
 #MAKE_FLAGS	:=
@@ -51,14 +51,14 @@ all: $(NAME)
 
 $(NAME): $(OBJS)
 	@printf "$(NEW)$(PURPLE)[$(NAME)] $(UGREEN)Building:$(DEFAULT)$(BWHITE) $@$(DEFAULT)"
-	@$(CC) $(CFLAGS) $(OBJS) $(INCLDS_FLAGS) $(PROG_FLAGS) $(TEST_FLAGS) -o $@
+	@$(CXX) $(CXXFLAGS) $(OBJS) $(INCLDS_FLAGS) $(PROG_FLAGS) $(TEST_FLAGS) -o $@
 	@printf "\n"
 
 -include $(DEPS)
 $(OBJS_DIR)/%.o: $(SRCS_DIR)/%.cpp
 	@printf "$(NEW)$(PURPLE)[$(NAME)] $(UGREEN)Building:$(DEFAULT) $<"
 	@mkdir -p $(OBJS_DIR)
-	@$(CC) $(DEPS_FLAGS) $(CFLAGS) $(INCLDS_FLAGS) $(PROG_FLAGS) $(TEST_FLAGS) -c $< -o $@
+	@$(CXX) $(DEPS_FLAGS) $(CXXFLAGS) $(INCLDS_FLAGS) $(PROG_FLAGS) $(TEST_FLAGS) -c $< -o $@
 
 clean:
 	@printf "$(PURPLE)[$(NAME)] $(RED)Removing $(DEFAULT)$(OBJS_DIR) files\n"
