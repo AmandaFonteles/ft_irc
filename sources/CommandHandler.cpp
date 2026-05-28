@@ -224,7 +224,7 @@ void CommandHandler::handleNICK(Server &server, Client *client, const Message &m
 	}
 	const std::string newNickname = msg.param(0);
 	// invalid nickname
-	if (!isValidClientName(newNickname))
+	if (isValidClientName(newNickname) == false)
 	{
 		client->set_bufferOut(Replies::ERR_ERRONEUSNICKNAME(serverName, currentNickname, newNickname));
 		server.switchPollOut(client->get_socketFd());
@@ -243,9 +243,28 @@ void CommandHandler::handleNICK(Server &server, Client *client, const Message &m
 	// Update client nickname + msg to shared channels if already registered
 	if (client->get_registered())
 	{
-		const std::string nickChangeMsg = Replies::NICK_CHANGE(client->get_nickname(), client->get_username(), client->get_hostname(), newNickname);
-		client->set_bufferOut(nickChangeMsg);
-		server.switchPollOut(client->get_socketFd());
+		std::string	lst_chan = client->get_channels();
+		std::string	chan;
+		Channel		*chan_ptr;
+		size_t		pos;
+
+		while (!lst_chan.empty())//pos != std::string::npos
+		{
+			pos = lst_chan.find(",", 0);
+				chan = lst_chan.substr(0, pos);
+			if (pos != std::string::npos)
+				lst_chan.erase(0, pos + 1);
+			else
+				lst_chan.clear();
+	
+			chan_ptr = server.get_channel(chan);
+			if (chan_ptr)//mettre ce qu'il y a dedans dans un bloc qui retourne true si reussi en mode "no_error = checksJoinIfChannelExists(c, chan_ptr, key);" A voir avec les messages d'erreur ?
+				broadcastToChannel(server, chan_ptr, Replies::NICK_CHANGE(client->get_nickname(), client->get_username(), client->get_hostname(), newNickname), NULL);
+		}
+
+		//const std::string nickChangeMsg = Replies::NICK_CHANGE(client->get_nickname(), client->get_username(), client->get_hostname(), newNickname);
+		// client->set_bufferOut(nickChangeMsg);
+		// server.switchPollOut(client->get_socketFd());
 	}
 	client->set_nickname(newNickname);
 
@@ -424,6 +443,27 @@ bool	CommandHandler::isValidClientName(std::string const &nickname)//checker que
 	if (nickname.find_first_of("0123456789-") == 0)//nickname[0] != 0123456789-#: (# et : ne sont de toutes façons pas autorises)
 		return (false);
 	return (true);
+}
+
+std::string	CommandHandler::mkModeList(Channel *chan)//"itkol"
+{
+	std::ostringstream	modeLst;
+	std::string			res;
+
+	if (chan->get_inviteOnly())
+		modeLst << "i";
+	if (chan->get_topicProtected())
+		modeLst << "t";
+	if (chan->hasKey())
+		modeLst << "k";
+	if (chan->get_limit())
+	{
+		modeLst << "l ";
+		modeLst << chan->get_limit();
+	}
+	res = modeLst.str();
+std::cout << "[DEBUG] res = " << res << std::endl;
+	return (res);
 }
 
 //ex : JOIN #chan1,#chan2 key1,key2
@@ -928,16 +968,16 @@ void	CommandHandler::handleMODE(Server &server, Client *c, const Message &msg)//
 	const std::string nickname = c->get_nickname();
 	const std::string chanName = msg.params[0];
 
-	if (chanName[0] != '#')
-	{
-		return;//pour l'instant on ne gère que les modes de chan, pas les modes de client, du coup si la target n'est pas un chan on ignore la commande, a voir si on doit envoyer un message d'erreur ou pas
-	}
 
 	if (msg.params.empty() || msg.params[0].empty())
 	{
 		c->set_bufferOut(Replies::ERR_NEEDMOREPARAMS(serverName, nickname, "MODE"));//ERR_NEEDMOREPARAMS (461)
 		server.switchPollOut(c->get_socketFd());
 		return;
+	}
+	if (isValidClientName(msg.params[0]))
+	{
+		return;//pour l'instant on ne gere que les modes de chan, pas les modes de client, du coup si la target n'est pas un chan on ignore la commande, a voir si on doit envoyer un message d'erreur ou pas
 	}
 	chan_ptr = server.get_channel(msg.params[0]);
 	if (!chan_ptr)
@@ -948,7 +988,7 @@ void	CommandHandler::handleMODE(Server &server, Client *c, const Message &msg)//
 	}
 	if (msg.params.size() < 2) // if no modestring, just return the current modes of the channel with RPL_CHANNELMODEIS (324)
 	{
-		c->set_bufferOut(Replies::RPL_CHANNELMODEIS(serverName, nickname, chanName, "itkol"));//RPL_CHANNELMODEIS (324)
+		c->set_bufferOut(Replies::RPL_CHANNELMODEIS(serverName, nickname, chanName, mkModeList(chan_ptr)));//RPL_CHANNELMODEIS (324)
 		server.switchPollOut(c->get_socketFd());
 		return;
 	}
@@ -1023,7 +1063,7 @@ void	CommandHandler::handleMODE(Server &server, Client *c, const Message &msg)//
 				return;
 			extract_nb << msg.params[2];
 			extract_nb >> nb_l;
-			if (extract_nb.fail() || !extract_nb.eof() || nb_l == 0)
+			if (extract_nb.fail() || !extract_nb.eof() || nb_l == 0 || msg.params[2].find("-") != std::string::npos)
 			{
 				c->set_bufferOut(Replies::ERR_INVALIDMODEPARAM(serverName, nickname, chanName, 'l', msg.params[2]));//ERR_INVALIDMODEPARAM (696) param[2] == [modestring mode_arg]
 				server.switchPollOut(c->get_socketFd());
