@@ -454,10 +454,22 @@ void CommandHandler::handleJOIN(Server &server, Client *c, const Message &msg)
 	if (msg.params.size() > 1)
 		lst_key = msg.params[1];
 //si msg->param[0] = "0"
-	if (lst_chan == "0")//JOIN 0 == PART chan1,chan2...
+	if (lst_chan == "0")//JOIN 0 == PART chan1,chan2... 
 	{
+		Message fakePartMessage;
+		fakePartMessage.prefix = msg.prefix;
+		fakePartMessage.command = "PART";
+		fakePartMessage.params.push_back(c->get_channels());
+		if (fakePartMessage.params[0].empty())
+			return;
+		if (msg.params.size() > 1)
+			fakePartMessage.params.push_back(msg.params[1]);
+		fakePartMessage.hasTrailing = msg.hasTrailing;
+		if (msg.hasTrailing)
+			fakePartMessage.trailing = msg.trailing;
+
 		//;// => on cree un message part avec prefix = ???(celui du msg actuel ?), command = "PART", params = c->get_channels() (donc sous forme de string), trailing ???, has trailing ????
-		//;//=> On appelle Part avec le nouveau message
+		CommandHandler::handlePART(server, c, fakePartMessage);//=> On appelle Part avec le nouveau message
 		return;
 	}
 

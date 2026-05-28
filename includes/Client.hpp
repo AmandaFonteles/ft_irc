@@ -92,7 +92,7 @@ public:
 	std::string			get_username() const;
 	bool				get_passOk() const;
 	bool				get_registered() const;
-	// std::set<Channel *>	get_channels();//get ou print ? ou string ?
+	std::string			get_channels() const;//get ou print ? ou string ?
 	std::string			&get_bufferOut();
 
 //other methods

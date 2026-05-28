@@ -109,6 +109,26 @@ std::string	&Client::get_bufferOut()
 	return (_bufferOut);
 }
 
+std::string			Client::get_channels() const
+{
+	std::string 					s = "";
+
+	if (!_channels.empty())
+	{
+		std::set<Channel *>::iterator	it = _channels.begin();
+		std::set<Channel *>::iterator	ite = _channels.end();
+		
+		s += (*it)->get_name();
+		it++;
+		while (it != ite)
+		{
+			s += "," + (*it)->get_name();
+			it++;
+		}
+	}
+	return s;
+}
+
 // std::set<Channel *>	const Client::get_channels()
 // {
 // 	return (_channels);
