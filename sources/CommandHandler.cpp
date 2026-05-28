@@ -179,12 +179,12 @@ void CommandHandler::handlePASS(Server &server, Client *client, const Message &m
 	if (password != server.get_password())
 	{
 		client->set_bufferOut(Replies::ERR_PASSWDMISMATCH(serverName, nickname));
-		client->set_bufferOut(Replies::ERROR_MSG("Password incorrect"));
 		server.switchPollOut(client->get_socketFd());
-		client->set_shouldClose(true);
 		return;
 	}
 	client->set_passOk(true);
+
+	registerClient(server, client);
 }
 
 // Handle NICK command (e.g. check nickname validity, set client nickname, etc.)
@@ -417,7 +417,6 @@ bool	CommandHandler::isValidClientName(std::string const &nickname)//checker que
 	allowedChar = allowedChar + "0123456789";
 	allowedChar = allowedChar + "-_[]\\`^{}|";//C'est juste pour que ce soit plus lisible qu'une seule grosse ligne
 
-std::cout << "[DEBUG] allowChar string = \"" << allowedChar << "\""<< std::endl;
 	if (nickname.empty() || nickname.size() > 9)//chaine non vide => min 1 max 9 (rfc2812)
 		return (false);
 	if (nickname.find_first_not_of(allowedChar) != std::string::npos)

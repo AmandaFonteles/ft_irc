@@ -58,12 +58,16 @@ Client	*Server::get_client(std::string const nickname)
 	std::string							nickname_lower = Server::lowerName(nickname);
 
 	it = _clients.begin();
+std::cout << "[DEBUG] nickname (" << nickname << ") normalized = " << nickname_lower << std::endl;
 	while (it != _clients.end())
 	{
+std::cout << "[DEBUG] 1" << std::endl;
 		if (Server::lowerName(it->second->get_nickname()) == nickname_lower)
 			return (it->second);
+std::cout << "[DEBUG] 2" << std::endl;
 		it++;
 	}
+std::cout << "[DEBUG] pouet" << std::endl;
 	return (NULL);
 }
 
