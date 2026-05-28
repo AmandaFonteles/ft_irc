@@ -159,8 +159,8 @@ void	Client::removeAllChannel()
 	while (it != _channels.end())
 	{
 		chan = *it;
-		this->removeChannel(chan); //++);
-		it++; //erase
+		this->removeChannel(chan);
+		it++;
 	}
 	return;
 }

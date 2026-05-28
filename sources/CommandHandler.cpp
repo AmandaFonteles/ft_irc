@@ -227,21 +227,20 @@ void CommandHandler::handleUSER(Server &server, Client *client, const Message &m
 	const std::string serverName = server.get_name();
 	const std::string nickname = client->get_nickname().empty() ? "*" : client->get_nickname();
 
-	// Already registered
 	if (client->get_registered())
 	{
 		client->set_bufferOut(Replies::ERR_ALREADYREGISTERED(serverName, nickname));
 		server.switchPollOut(client->get_socketFd());
 		return;
 	}
-	// Not enough params
+
 	if (msg.paramsCount() < 4)
 	{
 		client->set_bufferOut(Replies::ERR_NEEDMOREPARAMS(serverName, nickname, "USER"));
 		server.switchPollOut(client->get_socketFd());
 		return;
 	}
-	// Empty username
+
 	const std::string username = msg.param(0);
 	if (username.empty())
 	{
@@ -259,7 +258,7 @@ void CommandHandler::handlePING(Server &server, Client *client, const Message &m
 {
 	const std::string token = msg.param(0);
 
-	client->set_bufferOut(Replies::PONG(/*server.get_name()s,*/ token));
+	client->set_bufferOut(Replies::PONG(token));
 	server.switchPollOut(client->get_socketFd());
 }
 
@@ -290,7 +289,6 @@ void CommandHandler::registerClient(Server &server, Client *client)
 	const std::string user = client->get_username();
 	const std::string host = client->get_hostname();
 
-	// Send welcome messages 001-004
 	client->set_bufferOut(Replies::RPL_WELCOME(name, nickname, user, host));
 	client->set_bufferOut(Replies::RPL_YOURHOST(name, nickname));
 	client->set_bufferOut(Replies::RPL_CREATED(name, nickname));
@@ -380,7 +378,6 @@ std::cout << "[DEBUG] res = " << res << std::endl;
 	return (res);
 }
 
-//ex : JOIN #chan1,#chan2 key1,key2
 void CommandHandler::handleJOIN(Server &server, Client *c, const Message &msg)
 {
 	std::string	chan;
@@ -905,7 +902,7 @@ void	CommandHandler::handleMODE(Server &server, Client *c, const Message &msg)
 			chan_ptr->set_inviteOnly(false, c);
 			broadcastToChannel(server, chan_ptr, Replies::MODE_MSG(nickname, c->get_username(), c->get_hostname(), chanName, modestring), NULL);
 			break;
-		case 2://+t
+		case 2:
 			if (chan_ptr->get_topicProtected())
 				return;
 			chan_ptr->set_topicProtected(true, c);
