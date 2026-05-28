@@ -1,4 +1,4 @@
-*This project has been created as part of the 42 curriculum by <afontele>, <aibonade>, <ndarouec>.*
+*This project has been created as part of the 42 curriculum by afontele, aibonade, ndarouec.*
 
 # ft_irc
 
